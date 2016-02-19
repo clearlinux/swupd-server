@@ -793,7 +793,8 @@ bool compute_hash_with_xattrs(const char *filename)
 		return true;
 	}
 
-	return false;
+	/* Currently swupd-client includes xattrs to hash sums of all files */
+	return true;
 }
 
 /* Returns 0 == success, -1 == failure */
