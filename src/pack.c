@@ -114,7 +114,7 @@ static void explode_pack_stage(int version, char *module)
 		 * time on the client...
 		 */
 		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp "
-				TAR_PERM_ATTR_ARGS " -axf %s", packstage_dir, module, version, path);
+				TAR_PERM_ATTR_ARGS " -xf %s", packstage_dir, module, version, path);
 		ret = system(tar);
 		if (!ret) {
 			unlink(path);
