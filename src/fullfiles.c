@@ -92,8 +92,8 @@ static void create_fullfile(struct file *file)
 			assert(0);
 		}
 
-		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s'/* '%s' 2> /dev/null | "
-					   "tar -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
+		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s/?*' './%s' 2> /dev/null | "
+			      TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
 			      dir, base, base, rename_tmpdir);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
@@ -110,7 +110,7 @@ static void create_fullfile(struct file *file)
 		free(rename_source);
 
 		/* for a directory file, tar up simply with gzip */
-		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar %s",
+		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar %s",
 			      rename_tmpdir, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
@@ -145,7 +145,7 @@ static void create_fullfile(struct file *file)
 
 		/* step 2a: tar it with each compression type  */
 		// lzma
-		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -Jcf %s/%i/files/%s.tar.xz %s",
+		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -Jcf %s/%i/files/%s.tar.xz %s",
 			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
@@ -153,7 +153,7 @@ static void create_fullfile(struct file *file)
 		}
 		free(tarcommand);
 		// gzip
-		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar.gz %s",
+		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar.gz %s",
 			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
@@ -161,7 +161,7 @@ static void create_fullfile(struct file *file)
 		}
 		free(tarcommand);
 #ifdef SWUPD_WITH_BZIP2
-		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -jcf %s/%i/files/%s.tar.bz2 %s",
+		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -jcf %s/%i/files/%s.tar.bz2 %s",
 			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);

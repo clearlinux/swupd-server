@@ -113,8 +113,8 @@ static void explode_pack_stage(int version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp " TAR_PERM_ATTR_ARGS
-				    " -xf %s",
+		string_or_die(&tar, TAR_COMMAND " --directory=%s/%s/%i/staged " TAR_WARN_ARGS " "
+			            TAR_PERM_ATTR_ARGS " -xf %s",
 			      packstage_dir, module, version, path);
 		ret = system(tar);
 		if (!ret) {
@@ -443,8 +443,8 @@ static int make_final_pack(struct packdata *pack)
 
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
-	string_or_die(&tar, "tar " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i/ "
-			    "--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
+	string_or_die(&tar, TAR_COMMAND " " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i/ "
+		            "--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
 		      packstage_dir, pack->module, pack->from, staging_dir, pack->to, pack->module, pack->from);
 	ret = system(tar);
 	free(tar);

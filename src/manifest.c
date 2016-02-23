@@ -749,12 +749,12 @@ static int write_manifest_tar(struct manifest *manifest)
 	/* now, tar the thing up for efficient full file download */
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
-		string_or_die(&tarcmd, "tar --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
+		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
 				       "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component, manifest->component);
 	} else {
-		string_or_die(&tarcmd, "tar --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
+		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
 				       "%s/%i/Manifest.%s.tar Manifest.%s",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component);

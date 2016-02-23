@@ -29,6 +29,15 @@ AC_ARG_ENABLE(
 )
 
 AC_ARG_ENABLE(
+	[bsdtar],
+	AS_HELP_STRING([--enable-bsdtar],[Use alternative bsdtar command (uses tar by default)]),
+	AS_IF([test "x$enable_bsdtar" = "xyes"],
+		AC_DEFINE([SWUPD_WITH_BSDTAR], 1, [Use alternative bsdtar]),
+		AC_DEFINE([SWUPD_WITH_BSDTAR], 0, [Use default tar command])),
+	AC_DEFINE([SWUPD_WITH_BSDTAR], 0, [Use default tar command])
+)
+
+AC_ARG_ENABLE(
   [tests],
   [AS_HELP_STRING([--disable-tests], [Do not enable functional test framework (enabled by default)])]
 )
