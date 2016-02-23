@@ -93,7 +93,7 @@ static void create_fullfile(struct file *file)
 			assert(0);
 		}
 
-		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -cf - '%s' --exclude='%s'/* 2> /dev/null | "
+		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s'/* '%s' 2> /dev/null | "
 			"tar -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
 			 dir, base, base, rename_tmpdir);
 		if (system(tarcommand) != 0) {
@@ -111,8 +111,8 @@ static void create_fullfile(struct file *file)
 		free(rename_source);
 
 		/* for a directory file, tar up simply with gzip */
-		string_or_die(&tarcommand, "tar -C %s %s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar",
-			      rename_tmpdir, file->hash, outdir, file->last_change, file->hash);
+		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar %s",
+			      rename_tmpdir, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
