@@ -1,0 +1,30 @@
+test_patch.sh [options] compare two folders, create and patch the first folder found and compare the result with the next folder found
+ -b | --base            : base folder of versions
+ -c | --colorize        : colorize output
+ -e | --encoding        : (list of encoding algorithms) create patches with encoding algorithms given (could be 'raw'/'gzip'/'xz'/'zeros')
+ -h | --help            : display this help and exit
+ -i | --ignore-identical: (y | n) compare file of old and new version before creating/applying/checking a patch (if file are same it's ignored, default is 'yes')
+ -k | --keep            : keep template files and result
+ -o | --output          : output trace. Verbosely list executed command (for terminal, use /dev/stderr instead of /dev/stdout=the standard command result)
+ -t | --tar             : tar name of template files
+ -v | --valgrind        : execute valgrind for each command
+
+test_patch takes as input a "base folder" (-b) or a tar file (-t). In any case, these must contain 2 others folders representing a list of files representing two different versions to compare, with the goal of :
+ - creating a patch for each file found
+ - applying these patches on the files of the old version
+ - checking if the patched files are effectively the same as the corresponding files in the new version
+test_patch will list alphabeticaly the content of the "base folder", and take the first folder found as the "old version" and the next as the "new version"
+and will create a 'result folder' which contains patches and patched files (stored in base folder with the folder name "'new version'_PATCH")
+
+test_patch will parse recursively the folder "old version", and create the corresponding tree in the result folder
+
+test_patch will create a patch for each file found if the file :
+- is a file (!). The folders are not "patched" but parsed recursively. No analyse are done on folder.
+- exists in the new version at the same place in the tree
+- file size is not 0 byte in old or new version
+
+For each file, test_patch will encode the patch with the encoding algorithm given with the option (-e | --encoding).
+This is a list, spaces separated, among the following encoding : 'raw'/'gzip'/'xz'/'zeros'/'any'. If this parameter is omitted, 'raw' is used.
+
+The simple command line to test is :
+./test_patch.sh -t basedir_quick.tar -c
