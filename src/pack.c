@@ -39,28 +39,31 @@
 
 #include "swupd.h"
 
-static void empty_pack_stage(int full, int version, char *module)
+static void empty_pack_stage(int full, int from_version, int to_version, char *module)
 {
 	char *cmd;
 	char *path;
 	int ret;
 
 	// clean any stale data (eg: re-run after a failure)
-	string_or_die(&cmd, "rm -rf %s/%s/%i/", packstage_dir, module, version);
+	string_or_die(&cmd, "rm -rf %s/%s/%i_to_%i/", packstage_dir, module,
+		      from_version, to_version);
 	ret = system(cmd);
 	if (ret) {
-		fprintf(stderr, "Failed to clean %s/%s/%i\n",
-			packstage_dir, module, version);
+		fprintf(stderr, "Failed to clean %s/%s/%i_to_%i\n",
+			packstage_dir, module, from_version, to_version);
 		exit(EXIT_FAILURE);
 	}
 	free(cmd);
 
 	if (!full) {
 		// (re)create module/version/{delta,staged}
-		string_or_die(&path, "%s/%s/%i/delta", packstage_dir, module, version);
+		string_or_die(&path, "%s/%s/%i_to_%i/delta", packstage_dir, module,
+			      from_version, to_version);
 		g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
 		free(path);
-		string_or_die(&path, "%s/%s/%i/staged", packstage_dir, module, version);
+		string_or_die(&path, "%s/%s/%i_to_%i/staged", packstage_dir, module,
+			      from_version, to_version);
 		g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
 		free(path);
 	}
@@ -69,14 +72,15 @@ static void empty_pack_stage(int full, int version, char *module)
 /*
  * for very small files (eh.. lets make that all), we untar them for pack purposes
  */
-static void explode_pack_stage(int version, char *module)
+static void explode_pack_stage(int from_version, int to_version, char *module)
 {
 	DIR *dir;
 	struct dirent *entry;
 	struct stat buf;
 	char *path;
 
-	string_or_die(&path, "%s/%s/%i/staged", packstage_dir, module, version);
+	string_or_die(&path, "%s/%s/%i_to_%i/staged", packstage_dir, module,
+		      from_version, to_version);
 	g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
 	dir = opendir(path);
 	if (!dir) {
@@ -99,8 +103,8 @@ static void explode_pack_stage(int version, char *module)
 			continue;
 		}
 
-		string_or_die(&path, "%s/%s/%i/staged/%s",
-		              packstage_dir, module, version, entry->d_name);
+		string_or_die(&path, "%s/%s/%i_to_%i/staged/%s", packstage_dir, module,
+			      from_version, to_version, entry->d_name);
 		ret = stat(path, &buf);
 		if (ret) {
 			free(path);
@@ -113,8 +117,9 @@ static void explode_pack_stage(int version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp "
-				TAR_PERM_ATTR_ARGS " -xf %s", packstage_dir, module, version, path);
+		string_or_die(&tar, "tar --directory=%s/%s/%i_to_%i/staged --warning=no-timestamp "
+				TAR_PERM_ATTR_ARGS " -xf %s", packstage_dir, module,
+				from_version, to_version, path);
 		ret = system(tar);
 		if (!ret) {
 			unlink(path);
@@ -139,7 +144,7 @@ static void prepare_pack(struct packdata *pack)
 
 	pack->end_manifest = manifest_from_file(pack->to, pack->module);
 
-	empty_pack_stage(0, pack->from, pack->module);
+	empty_pack_stage(0, pack->from, pack->to, pack->module);
 
 	match_manifests(manifest, pack->end_manifest);
 
@@ -164,7 +169,8 @@ static void make_pack_full_files(struct packdata *pack)
 			char *from, *to;
 			/* hardlink each file that is in <end> but not in <X> */
 			string_or_die(&from, "%s/%i/files/%s.tar", staging_dir, file->last_change, file->hash);
-			string_or_die(&to, "%s/%s/%i/staged/%s.tar", packstage_dir, pack->module, pack->from, file->hash);
+			string_or_die(&to, "%s/%s/%i_to_%i/staged/%s.tar", packstage_dir,
+				      pack->module, pack->from, pack->to, file->hash);
 			ret = link(from, to);
 			if (ret) {
 				if (errno != EEXIST) {
@@ -330,12 +336,13 @@ static int make_final_pack(struct packdata *pack)
 		/* locate delta, check if the diff it's from is >= <X> */
 		string_or_die(&from, "%s/%i/delta/%i-%i-%s", staging_dir, file->last_change,
 				file->peer->last_change, file->last_change, file->hash);
-		string_or_die(&to, "%s/%s/%i/delta/%i-%i-%s", packstage_dir, pack->module,
-				pack->from, file->peer->last_change, file->last_change, file->hash);
+		string_or_die(&to, "%s/%s/%i_to_%i/delta/%i-%i-%s", packstage_dir,
+			      pack->module, pack->from, pack->to, file->peer->last_change,
+			      file->last_change, file->hash);
 		string_or_die(&tarfrom, "%s/%i/files/%s.tar", staging_dir,
 				file->last_change, file->hash);
-		string_or_die(&tarto, "%s/%s/%i/staged/%s.tar", packstage_dir, pack->module,
-				pack->from, file->hash);
+		string_or_die(&tarto, "%s/%s/%i_to_%i/staged/%s.tar", packstage_dir,
+			      pack->module, pack->from, pack->to, file->hash);
 
 		ret = stat(from, &stat_delta);
 		if (ret) {
@@ -386,7 +393,7 @@ static int make_final_pack(struct packdata *pack)
 
 	if (pack->fullcount > 0) {
 		/* untar all files for smaller size and less cpu use on client */
-		explode_pack_stage(pack->from, pack->module);
+		explode_pack_stage(pack->from, pack->to, pack->module);
 	}
 
 	/* now... link in the Manifest pack */
@@ -404,8 +411,8 @@ static int make_final_pack(struct packdata *pack)
 		}
 
 
-		string_or_die(&to, "%s/%s/%i/Manifest-%s-delta-from-%i",
-				packstage_dir, pack->module, pack->from, pack->module, pack->from);
+		string_or_die(&to, "%s/%s/%i_to_%i/Manifest-%s-delta-from-%i", packstage_dir,
+			      pack->module, pack->from, pack->to, pack->module, pack->from);
 
 		ret = link(from, to);
 		if (ret) {
@@ -430,8 +437,8 @@ static int make_final_pack(struct packdata *pack)
 			create_manifest_delta(pack->from, pack->to, "MoM");
 		}
 
-		string_or_die(&to, "%s/%s/%i/Manifest-%s-delta-from-%i",
-				packstage_dir, pack->module, pack->from, "MoM", pack->from);
+		string_or_die(&to, "%s/%s/%i_to_%i/Manifest-%s-delta-from-%i", packstage_dir,
+			      pack->module, pack->from, pack->to, "MoM", pack->from);
 
 		ret = link(from, to);
 		if (ret) {
@@ -445,9 +452,10 @@ static int make_final_pack(struct packdata *pack)
 
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
-	string_or_die(&tar, "tar " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i/ "
+	string_or_die(&tar, "tar " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i_to_%i/ "
 			"--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
-			packstage_dir, pack->module, pack->from, staging_dir, pack->to, pack->module, pack->from);
+			packstage_dir, pack->module, pack->from, pack->to, staging_dir, pack->to,
+			pack->module, pack->from);
 	ret = system(tar);
 	free(tar);
 	LOG(NULL, "finished tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
@@ -466,7 +474,7 @@ static int make_final_pack(struct packdata *pack)
 
 	/* and clean up */
 	free_manifest(pack->end_manifest);
-	empty_pack_stage(1, pack->from, pack->module);
+	empty_pack_stage(1, pack->from, pack->to, pack->module);
 
 	LOG(NULL, "pack complete", "%s: %i to %i", pack->module, pack->from, pack->to);
 	return ret;
