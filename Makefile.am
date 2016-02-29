@@ -96,6 +96,18 @@ noinst_HEADERS = \
 	include/swupd.h \
 	include/xattrs.h
 
+if COVERAGE
+AM_CFLAGS += --coverage
+
+coverage: coverage-clean
+	mkdir -p coverage
+	lcov --compat-libtool --directory . --capture --output-file coverage/report
+	genhtml -o coverage/ coverage/report
+
+coverage-clean:
+	rm -rf coverage
+endif
+
 distclean-local:
 	rm -rf aclocal.m4 autogen.sh autom4te.cache config.h.in config.h.in~ configure depcomp install-sh Makefile.in missing compile
 

@@ -28,6 +28,25 @@ AC_ARG_ENABLE(
 		AC_DEFINE(SWUPD_WITH_STATELESS,1,[OS is stateless])
 )
 
+have_coverage=no
+AC_ARG_ENABLE(coverage, AS_HELP_STRING([--enable-coverage], [enable test coverage]))
+if test "$enable_coverage" = "yes" ; then
+        AC_CHECK_PROG(lcov_found, [lcov], [yes], [no])
+        if test "$lcov_found" = "no" ; then
+                AC_MSG_ERROR([*** lcov support requested but the program was not found])
+        else
+                lcov_version_major="`lcov --version | cut -d ' ' -f 4 | cut -d '.' -f 1`"
+                lcov_version_minor="`lcov --version | cut -d ' ' -f 4 | cut -d '.' -f 2`"
+                if test "$lcov_version_major" -eq 1 -a "$lcov_version_minor" -lt 10; then
+                        AC_MSG_ERROR([*** lcov version is too old. 1.10 required])
+                else
+			have_coverage=yes
+			AC_DEFINE([COVERAGE], [1], [Coverage enabled])
+                fi
+        fi
+fi
+AM_CONDITIONAL([COVERAGE], [test "$have_coverage" = "yes"])
+
 AS_IF([test "$enable_bzip2" != "no"], [
   AC_CHECK_LIB([bz2], [BZ2_bzBuffToBuffCompress], [], [AC_MSG_ERROR([the libbz2 library is missing])])
   AC_CHECK_PROGS(BZIP2, bzip2)

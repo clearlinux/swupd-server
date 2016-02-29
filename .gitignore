@@ -24,3 +24,6 @@ swupd_make_fullfiles
 swupd-server-*.tar.gz
 cscope.*
 *.kdev4
+coverage/
+src/*.gcno
+src/*.gcda
