@@ -15,6 +15,7 @@ if [ ! -f "$SWUPD_SERVER_INI" ]; then
 	template=$(echo $BASH_SOURCE)
 	template=$(dirname $template)
 	cp -p $template/server.ini $SWUPD_SERVER_INI
+	sed -i "s|/var/lib/update|$UPDATEDIR|" $SWUPD_SERVER_INI
 fi
 
 if [ ! -f "$UPDATEDIR/image/latest.version" ]; then
