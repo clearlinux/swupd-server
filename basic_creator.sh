@@ -55,7 +55,16 @@ popd
 
 # expose the new build to staging / testing
 echo ${VER} > ${UPDATEDIR}/image/latest.version
-STAGING=$(cat ${UPDATEDIR}/www/version/formatstaging/latest)
+
+STAGING_FILE="${UPDATEDIR}/www/version/formatstaging/latest"
+if [ ! -f "${STAGING_FILE}" ]; then
+	mkdir -p "${UPDATEDIR}/www/version/formatstaging"
+	STAGING=0
+	echo ${STAGING} > ${UPDATEDIR}/www/version/formatstaging/latest
+else
+	STAGING=$(cat ${STAGING_FILE})
+fi
+
 if [ "${STAGING}" -lt "${VER}" ]; then
 	echo ${VER} > ${UPDATEDIR}/www/version/formatstaging/latest
 fi
