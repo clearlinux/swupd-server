@@ -51,7 +51,7 @@ done
 NUM_PACKS=2
 ${SWUPDREPO}/pack_maker.sh ${VER} ${NUM_PACKS}
 
-popd ${SWUPDREPO}
+popd
 
 # expose the new build to staging / testing
 echo ${VER} > ${UPDATEDIR}/image/latest.version
