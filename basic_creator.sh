@@ -6,8 +6,6 @@ SWUPDREPO=${SWUPDREPO:-"/usr/src/clear-projects/swupd-server"}
 BUNDLEREPO=${BUNDLEREPO:-"/usr/src/clear-projects/clr-bundles"}
 UPDATEDIR=${UPDATEDIR:-"/var/lib/update"}
 
-PREVREL=`cat ${UPDATEDIR}/image/latest.version`
-
 error() {
 	echo "${1:-"Unknown Error"}"
 	exit 1
@@ -16,6 +14,8 @@ error() {
 # remove things from $BUNDLEREPO/bundles to make local build faster,
 # eg: all of openstack, pnp, bat, cloud stuff, non-basic scripting language bundles
 ${SWUPDREPO}/mk_groups_ini.sh
+
+PREVREL=`cat ${UPDATEDIR}/image/latest.version`
 
 export SWUPD_CERTS_DIR=${SWUPD_CERTS_DIR:-"/root/swupd-certs"}
 export LEAF_KEY="leaf.key.pem"
