@@ -53,13 +53,13 @@ if [ ! -e ${MOM} ]; then
 	exit 1
 fi
 
-#time ${SWUPDREPO}/swupd_make_fullfiles ${VER}
+#time ${SWUPDREPO}/swupd_make_fullfiles --statedir ${UPDATEDIR} ${VER}
 
 BUNDLE_LIST=$(cat ${MOM} | awk -v V=${VER} '$1 ~ /^M\./ && $3 == V { print $4 }')
 
 # build packs for all bundles changed in $VER
 for BUNDLE in $BUNDLE_LIST; do
-	#${SWUPDREPO}/swupd_make_pack 0 ${VER} ${BUNDLE} &
+	#${SWUPDREPO}/swupd_make_pack --statedir ${UPDATEDIR} 0 ${VER} ${BUNDLE} &
 
 	BUNDLE_VER_LIST=""
 	MANIFEST_VER=$(cat ${SWUPDWEBDIR}/$VER/Manifest.MoM | grep "^previous:" | cut -f 2)
@@ -87,7 +87,7 @@ for BUNDLE in $BUNDLE_LIST; do
 		if [ -e ${SWUPDWEBDIR}/${VER}/pack-${BUNDLE}-from-$v.tar ]; then
 			echo "${VER}/pack-${BUNDLE}-from-$v.tar already exists, skipping."
 		else
-			${SWUPDREPO}/swupd_make_pack $v ${VER} ${BUNDLE}
+			${SWUPDREPO}/swupd_make_pack --statedir ${UPDATEDIR} $v ${VER} ${BUNDLE}
 		fi
 	done
 done

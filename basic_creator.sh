@@ -23,8 +23,8 @@ export LEAF_CERT="leaf.cert.pem"
 export CA_CHAIN_CERT="ca-chain.cert.pem"
 export PASSPHRASE="${SWUPD_CERTS_DIR}/passphrase"
 
-${SWUPDREPO}/swupd_create_update --osversion ${VER}
-${SWUPDREPO}/swupd_make_fullfiles ${VER}
+${SWUPDREPO}/swupd_create_update --osversion ${VER} --statedir ${UPDATEDIR}
+${SWUPDREPO}/swupd_make_fullfiles --statedir ${UPDATEDIR} ${VER}
 
 pushd ${SWUPDREPO}
 
@@ -36,7 +36,7 @@ fi
 BUNDLE_LIST=$(cat ${MOM} | awk -v V=${VER} '$1 ~ /^M\./ && $3 == V { print $4 }')
 for BUNDLE in $BUNDLE_LIST; do
 	#background them for parallelization
-	${SWUPDREPO}/swupd_make_pack 0 ${VER} ${BUNDLE} &
+	${SWUPDREPO}/swupd_make_pack --statedir ${UPDATEDIR} 0 ${VER} ${BUNDLE} &
 done
 #now await all completing
 for job in $(jobs -p); do
@@ -60,7 +60,7 @@ if [ "${STAGING}" -lt "${VER}" ]; then
 	echo ${VER} > ${UPDATEDIR}/www/version/formatstaging/latest
 fi
 
-#valgrind ${SWUPDREPO}/swupd_create_update ${VER}
+#valgrind ${SWUPDREPO}/swupd_create_update --osversion ${VER} --statedir ${UPDATEDIR}
 time hardlink ${UPDATEDIR}/image/${VER}/*
 time hardlink ${UPDATEDIR}/image/${PREVREL} ${UPDATEDIR}/image/${VER}
 time hardlink ${UPDATEDIR}/www/${PREVREL} ${UPDATEDIR}/www/${VER}
