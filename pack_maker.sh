@@ -87,7 +87,7 @@ for BUNDLE in $BUNDLE_LIST; do
 		if [ -e ${SWUPDWEBDIR}/${VER}/pack-${BUNDLE}-from-$v.tar ]; then
 			echo "${VER}/pack-${BUNDLE}-from-$v.tar already exists, skipping."
 		else
-			${SWUPDREPO}/swupd_make_pack --statedir ${UPDATEDIR} $v ${VER} ${BUNDLE}
+			${SWUPDREPO}/swupd_make_pack --statedir ${UPDATEDIR} $v ${VER} ${BUNDLE} &
 		fi
 	done
 done
