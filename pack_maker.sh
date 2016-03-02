@@ -20,9 +20,10 @@
 #      consider which version-pair packs are meaningful for intermediate builds
 #      and revert builds.
 
-SWUPDREPO=${SWUPDREPO:-"/root/swupd-server"}
-BUNDLEREPO=${BUNDLEREPO:-"/root/clr-bundles"}
-SWUPDWEBDIR="/var/lib/update/www"
+SWUPDREPO=${SWUPDREPO:-"/usr/src/clear-projects/swupd-server"}
+BUNDLEREPO=${BUNDLEREPO:-"/usr/src/clear-projects/clr-bundles"}
+UPDATEDIR=${UPDATEDIR:-"/var/lib/update"}
+SWUPDWEBDIR="${UPDATEDIR}/www"
 SWUPD_CERTS_DIR=${SWUPD_CERTS_DIR=:-"/root/swupd-certs"}
 
 export XZ_DEFAULTS="--threads 0"
@@ -83,7 +84,7 @@ for BUNDLE in $BUNDLE_LIST; do
 	done
 
 	for v in $BUNDLE_VER_LIST; do
-		if [ -e /var/lib/update/www/${VER}/pack-${BUNDLE}-from-$v.tar ]; then
+		if [ -e ${SWUPDWEBDIR}/${VER}/pack-${BUNDLE}-from-$v.tar ]; then
 			echo "${VER}/pack-${BUNDLE}-from-$v.tar already exists, skipping."
 		else
 			${SWUPDREPO}/swupd_make_pack $v ${VER} ${BUNDLE}

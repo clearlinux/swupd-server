@@ -1,11 +1,12 @@
 #!/bin/bash
 VER=$1
 XZ_DEFAULTS="--threads 0"
-PREVREL=`cat /var/lib/update/image/latest.version`
 
-SWUPDREPO=/usr/src/clear-projects/swupd-server
-BUNDLEREPO=/usr/src/clear-projects/clr-bundles
-UPDATEDIR=/var/lib/update
+SWUPDREPO=${SWUPDREPO:-"/usr/src/clear-projects/swupd-server"}
+BUNDLEREPO=${BUNDLEREPO:-"/usr/src/clear-projects/clr-bundles"}
+UPDATEDIR=${UPDATEDIR:-"/var/lib/update"}
+
+PREVREL=`cat ${UPDATEDIR}/image/latest.version`
 
 error() {
 	echo "${1:-"Unknown Error"}"
@@ -16,7 +17,7 @@ error() {
 # eg: all of openstack, pnp, bat, cloud stuff, non-basic scripting language bundles
 ${SWUPDREPO}/mk_groups_ini.sh
 
-export SWUPD_CERTS_DIR="/root/swupd-certs"
+export SWUPD_CERTS_DIR=${SWUPD_CERTS_DIR:-"/root/swupd-certs"}
 export LEAF_KEY="leaf.key.pem"
 export LEAF_CERT="leaf.cert.pem"
 export CA_CHAIN_CERT="ca-chain.cert.pem"
@@ -54,12 +55,12 @@ popd ${SWUPDREPO}
 
 # expose the new build to staging / testing
 echo ${VER} > ${UPDATEDIR}/image/latest.version
-STAGING=$(cat ${UPDATEDIR}/www//version/formatstaging/latest)
+STAGING=$(cat ${UPDATEDIR}/www/version/formatstaging/latest)
 if [ "${STAGING}" -lt "${VER}" ]; then
-	echo ${VER} > ${UPDATEDIR}/www//version/formatstaging/latest
+	echo ${VER} > ${UPDATEDIR}/www/version/formatstaging/latest
 fi
 
-#valgrind /usr/src/clear-projects/swupd-server/swupd_create_update ${VER}
-time hardlink /var/lib/update/image/${VER}/*
-time hardlink /var/lib/update/image/$PREVREL /var/lib/update/image/${VER}
-time hardlink /var/lib/update/www/$PREVREL /var/lib/update/www/${VER}
+#valgrind ${SWUPDREPO}/swupd_create_update ${VER}
+time hardlink ${UPDATEDIR}/image/${VER}/*
+time hardlink ${UPDATEDIR}/image/${PREVREL} ${UPDATEDIR}/image/${VER}
+time hardlink ${UPDATEDIR}/www/${PREVREL} ${UPDATEDIR}/www/${VER}

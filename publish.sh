@@ -13,8 +13,9 @@ if [[ $# < 1 ]]; then
     exit 1
 fi
 FORMAT=$1
+UPDATEDIR=${UPDATEDIR:-"/var/lib/update"}
 
-ver1=`cat /var/lib/update/www/version/formatstaging/latest`
-ver2=`cat /var/lib/update/www/version/format$FORMAT/latest`
-cp /var/lib/update/www/version/formatstaging/latest /var/lib/update/www/version/format$FORMAT/latest
+ver1=`cat ${UPDATEDIR}/www/version/formatstaging/latest`
+ver2=`cat ${UPDATEDIR}/www/version/format$FORMAT/latest`
+cp ${UPDATEDIR}/www/version/formatstaging/latest ${UPDATEDIR}/www/version/format$FORMAT/latest
 echo "Updated from $ver2 to $ver1 in format $FORMAT"

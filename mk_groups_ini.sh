@@ -1,14 +1,14 @@
 #! /bin/bash
 
 COMMON=${COMMON:-"/root/common"}
-BUNDLEREPO=${BUNDLEREPO:-"/root/clr-bundles"}
+BUNDLEREPO=${BUNDLEREPO:-"/usr/src/clear-projects/clr-bundles"}
 
-SWUPD_SERVER_DIR=${SWUPD_SERVER_DIR:-"/var/lib/update"}
-SWUPD_GROUPS_INI=${SWUPD_GROUPS_INI:-"$SWUPD_SERVER_DIR/groups.ini"}
-SWUPD_SERVER_INI=${SWUPD_SERVER_INI:-"$SWUPD_SERVER_DIR/server.ini"}
+UPDATEDIR=${UPDATEDIR:-"/var/lib/update"}
+SWUPD_GROUPS_INI=${SWUPD_GROUPS_INI:-"$UPDATEDIR/groups.ini"}
+SWUPD_SERVER_INI=${SWUPD_SERVER_INI:-"$UPDATEDIR/server.ini"}
 
-if [ ! -d "$SWUPD_SERVER_DIR" ]; then
-	mkdir -p $SWUPD_SERVER_DIR/{image,www}
+if [ ! -d "$UPDATEDIR" ]; then
+	mkdir -p $UPDATEDIR/{image,www}
 fi
 
 if [ ! -f "$SWUPD_SERVER_INI" ]; then
@@ -17,8 +17,8 @@ if [ ! -f "$SWUPD_SERVER_INI" ]; then
 	cp -p $template/server.ini $SWUPD_SERVER_INI
 fi
 
-if [ ! -f "$SWUPD_SERVER_DIR/image/latest.version" ]; then
-	echo "0" > $SWUPD_SERVER_DIR/image/latest.version
+if [ ! -f "$UPDATEDIR/image/latest.version" ]; then
+	echo "0" > $UPDATEDIR/image/latest.version
 fi
 
 echo "rebuilding $SWUPD_GROUPS_INI based on $BUNDLEREPO"
