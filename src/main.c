@@ -100,7 +100,7 @@ static bool parse_options(int argc, char **argv)
 		case 'm':
 			minversion = strtoull(optarg, NULL, 10);
 			if (minversion < 0) {
-				printf("-m | --minversion == %d, require value >= 0 \n", newversion);
+				printf("-m | --minversion == %d, require value >= 0 \n", minversion);
 				return false;
 			}
 			break;
