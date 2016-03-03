@@ -296,7 +296,7 @@ int main(int argc, char **argv)
 	match_manifests(old_full, new_full);
 	apply_heuristics(new_full);
 #warning disabled rename detection for some simplicity
-/*	rename_detection(new_full); */
+	// rename_detection(new_full);
 
 	print_elapsed_time(&previous_time, &current_time);
 
@@ -329,9 +329,9 @@ int main(int argc, char **argv)
 		/* Step 3c: ... else save the manifest */
 		type_change_detection(new_core);
 
-		/* Detect renamed files specifically for each pack */
 #warning disabled rename detection for some simplicity
-/*		rename_detection(...); */
+		/* Detect renamed files specifically for each pack */
+		// rename_detection(...);
 
 		sort_manifest_by_version(new_core);
 		newfiles = prune_manifest(new_core);

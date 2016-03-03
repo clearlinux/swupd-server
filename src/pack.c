@@ -113,8 +113,8 @@ static void explode_pack_stage(int version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp "
-				TAR_PERM_ATTR_ARGS " -xf %s", packstage_dir, module, version, path);
+		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp " TAR_PERM_ATTR_ARGS
+				    " -xf %s", packstage_dir, module, version, path);
 		ret = system(tar);
 		if (!ret) {
 			unlink(path);

@@ -398,11 +398,13 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 		}
 		if (ret < 0) {
 			struct file *file3;
-/*
- * if we get here, file1 got deleted... what we must do is add a file entry for it in the target list.
- * However, since we're currently walking the list we HAVE to prepend the entry.. and mark for sort at
- * the end.
- */
+			/*
+			 * if we get here, file1 got deleted... what we must do
+			 * is add a file entry for it in the target list.
+			 * However, since we're currently walking the list we
+			 * HAVE to prepend the entry.. and mark for sort at the
+			 * end.
+			 */
 			file3 = calloc(1, sizeof(struct file));
 			if (file3 == NULL) {
 				assert(0);
@@ -458,11 +460,12 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 			first = 0;
 		}
 		count++;
-/*
- * if we get here, file1 got deleted... what we must do is add a file entry for it in the target list.
- * However, since we're currently walking the list we HAVE to prepend the entry.. and mark for sort at
- * the end.
- */
+		/*
+		 * if we get here, file1 got deleted... what we must do is add
+		 * a file entry for it in the target list.  However, since
+		 * we're currently walking the list we HAVE to prepend the
+		 * entry.. and mark for sort at the end.
+		 */
 		file3 = calloc(1, sizeof(struct file));
 		if (file3 == NULL) {
 			assert(0);
