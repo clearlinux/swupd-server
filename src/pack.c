@@ -100,7 +100,7 @@ static void explode_pack_stage(int version, char *module)
 		}
 
 		string_or_die(&path, "%s/%s/%i/staged/%s",
-		              packstage_dir, module, version, entry->d_name);
+			      packstage_dir, module, version, entry->d_name);
 		ret = stat(path, &buf);
 		if (ret) {
 			free(path);
@@ -114,7 +114,8 @@ static void explode_pack_stage(int version, char *module)
 		 * time on the client...
 		 */
 		string_or_die(&tar, "tar --directory=%s/%s/%i/staged --warning=no-timestamp " TAR_PERM_ATTR_ARGS
-				    " -xf %s", packstage_dir, module, version, path);
+				    " -xf %s",
+			      packstage_dir, module, version, path);
 		ret = system(tar);
 		if (!ret) {
 			unlink(path);
@@ -153,7 +154,7 @@ static void make_pack_full_files(struct packdata *pack)
 	int ret;
 
 	LOG(NULL, "starting pack full file creation", "%s: %d to %d",
-		pack->module, pack->from, pack->to);
+	    pack->module, pack->from, pack->to);
 
 	/* 	full files pack: */
 	item = g_list_first(pack->end_manifest->files);
@@ -180,7 +181,7 @@ static void make_pack_full_files(struct packdata *pack)
 	}
 
 	LOG(NULL, "finished pack full file creation", "%s: %d to %d",
-		pack->module, pack->from, pack->to);
+	    pack->module, pack->from, pack->to);
 }
 
 static int find_file_in_list(GList *files, struct file *file)
@@ -195,8 +196,8 @@ static int find_file_in_list(GList *files, struct file *file)
 		item = g_list_next(item);
 
 		if (hash_compare(item_file->hash, file->hash) &&
-				(item_file->last_change == file->last_change) &&
-				(item_file->peer->last_change == file->peer->last_change)) {
+		    (item_file->last_change == file->last_change) &&
+		    (item_file->peer->last_change == file->peer->last_change)) {
 			LOG(NULL, "Found a duplicate delta", "%d %d %s %s", file->peer->last_change, file->last_change, file->hash, file->filename);
 			return TRUE;
 		}
@@ -230,7 +231,7 @@ static GList *consolidate_packs_delta_files(GList *files, struct packdata *pack)
 		}
 
 		string_or_die(&from, "%s/%i/delta/%i-%i-%s", staging_dir, file->last_change,
-		              file->peer->last_change, file->last_change, file->hash);
+			      file->peer->last_change, file->last_change, file->hash);
 
 		ret = stat(from, &stat_delta);
 		if (ret && !find_file_in_list(files, file)) {
@@ -263,7 +264,7 @@ static void make_pack_deltas(GList *files)
 
 	LOG(NULL, "pack deltas threadpool", "%d threads", sysconf(_SC_NPROCESSORS_ONLN));
 	threadpool = g_thread_pool_new(create_delta, NULL,
-				sysconf(_SC_NPROCESSORS_ONLN), FALSE, NULL);
+				       sysconf(_SC_NPROCESSORS_ONLN), FALSE, NULL);
 
 	item = g_list_first(files);
 	while (item) {
@@ -271,7 +272,7 @@ static void make_pack_deltas(GList *files)
 		item = g_list_next(item);
 
 		ret = g_thread_pool_push(threadpool, file, &err);
-		if (ret == FALSE){
+		if (ret == FALSE) {
 			// intentionally non-fatal
 			fprintf(stderr, "GThread create_delta push error\n");
 			fprintf(stderr, "%s\n", err->message);
@@ -289,7 +290,7 @@ static int write_pack_signature(struct packdata *pack)
 	int ret = -1;
 
 	string_or_die(&filename, "%s/%i/pack-%s-from-%i.tar",
-			staging_dir, pack->to, pack->module, pack->from);
+		      staging_dir, pack->to, pack->module, pack->from);
 	if (!signature_sign(filename)) {
 		fprintf(stderr, "Creating signature for '%s' failed\n", filename);
 		goto exit;
@@ -329,13 +330,13 @@ static int make_final_pack(struct packdata *pack)
 		/* for each file changed since <X> */
 		/* locate delta, check if the diff it's from is >= <X> */
 		string_or_die(&from, "%s/%i/delta/%i-%i-%s", staging_dir, file->last_change,
-				file->peer->last_change, file->last_change, file->hash);
+			      file->peer->last_change, file->last_change, file->hash);
 		string_or_die(&to, "%s/%s/%i/delta/%i-%i-%s", packstage_dir, pack->module,
-				pack->from, file->peer->last_change, file->last_change, file->hash);
+			      pack->from, file->peer->last_change, file->last_change, file->hash);
 		string_or_die(&tarfrom, "%s/%i/files/%s.tar", staging_dir,
-				file->last_change, file->hash);
+			      file->last_change, file->hash);
 		string_or_die(&tarto, "%s/%s/%i/staged/%s.tar", packstage_dir, pack->module,
-				pack->from, file->hash);
+			      pack->from, file->hash);
 
 		ret = stat(from, &stat_delta);
 		if (ret) {
@@ -395,7 +396,7 @@ static int make_final_pack(struct packdata *pack)
 		struct stat st;
 
 		string_or_die(&from, "%s/%i/Manifest-%s-delta-from-%i",
-				staging_dir, pack->to, pack->module, pack->from);
+			      staging_dir, pack->to, pack->module, pack->from);
 
 		ret = stat(from, &st);
 		if (ret) {
@@ -403,9 +404,8 @@ static int make_final_pack(struct packdata *pack)
 			create_manifest_delta(pack->from, pack->to, pack->module);
 		}
 
-
 		string_or_die(&to, "%s/%s/%i/Manifest-%s-delta-from-%i",
-				packstage_dir, pack->module, pack->from, pack->module, pack->from);
+			      packstage_dir, pack->module, pack->from, pack->module, pack->from);
 
 		ret = link(from, to);
 		if (ret) {
@@ -415,7 +415,6 @@ static int make_final_pack(struct packdata *pack)
 		free(from);
 		free(to);
 	}
-
 
 	/* now... link in the MoM Manifest into the base pack */
 	if ((pack->from != 0) && (strcmp(pack->module, "os-core") == 0)) {
@@ -423,7 +422,7 @@ static int make_final_pack(struct packdata *pack)
 		struct stat st;
 
 		string_or_die(&from, "%s/%i/Manifest-%s-delta-from-%i",
-				staging_dir, pack->to, "MoM", pack->from);
+			      staging_dir, pack->to, "MoM", pack->from);
 		ret = stat(from, &st);
 		if (ret) {
 			LOG(NULL, "Making extra manifest delta", "MoM: %i->%i", pack->from, pack->to);
@@ -431,7 +430,7 @@ static int make_final_pack(struct packdata *pack)
 		}
 
 		string_or_die(&to, "%s/%s/%i/Manifest-%s-delta-from-%i",
-				packstage_dir, pack->module, pack->from, "MoM", pack->from);
+			      packstage_dir, pack->module, pack->from, "MoM", pack->from);
 
 		ret = link(from, to);
 		if (ret) {
@@ -442,12 +441,11 @@ static int make_final_pack(struct packdata *pack)
 		free(to);
 	}
 
-
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
 	string_or_die(&tar, "tar " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i/ "
-			"--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
-			packstage_dir, pack->module, pack->from, staging_dir, pack->to, pack->module, pack->from);
+			    "--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
+		      packstage_dir, pack->module, pack->from, staging_dir, pack->to, pack->module, pack->from);
 	ret = system(tar);
 	free(tar);
 	LOG(NULL, "finished tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
@@ -471,7 +469,6 @@ static int make_final_pack(struct packdata *pack)
 	LOG(NULL, "pack complete", "%s: %i to %i", pack->module, pack->from, pack->to);
 	return ret;
 }
-
 
 /* Returns 0 == success, -1 == failure */
 int make_pack(struct packdata *pack)

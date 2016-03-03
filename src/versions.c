@@ -39,7 +39,6 @@
 
 int current_version;
 
-
 void read_current_version(char *filename)
 {
 	FILE *file;
@@ -47,8 +46,7 @@ void read_current_version(char *filename)
 	char *fullfile = NULL;
 	char *conf;
 
-	conf =  config_image_base();
-
+	conf = config_image_base();
 
 	string_or_die(&fullfile, "%s/%s", conf, filename);
 
@@ -79,8 +77,7 @@ void write_new_version(char *filename, int version)
 	char *fullfile = NULL;
 	char *conf;
 
-	conf =  config_image_base();
-
+	conf = config_image_base();
 
 	string_or_die(&fullfile, "%s/%s", conf, filename);
 
@@ -132,7 +129,7 @@ void write_cookiecrumbs_to_download_area(int version)
 	char *conf;
 	char *cmd;
 
-	conf =  config_output_dir();
+	conf = config_output_dir();
 	if (conf == NULL) {
 		assert(0);
 	}
@@ -179,7 +176,8 @@ static int compare_versions(gconstpointer a, gconstpointer b)
 	return GPOINTER_TO_INT(b) - GPOINTER_TO_INT(a);
 }
 
-static int get_build_type(int build_num) {
+static int get_build_type(int build_num)
+{
 	int build_type = build_num % 10;
 	if (build_type == 0) {
 		return REGULAR_BUILD;
@@ -190,7 +188,8 @@ static int get_build_type(int build_num) {
 	}
 }
 
-static int get_jump_point(int build_num) {
+static int get_jump_point(int build_num)
+{
 	int jump_point = (build_num / 100) * 100;
 	if (jump_point == build_num) {
 		jump_point -= 100;
@@ -218,7 +217,7 @@ GList *get_last_versions_list(int next_version, int max_versions)
 	dir = opendir(staging_dir);
 	if (dir == NULL) {
 		LOG(NULL, "Cannot open directory", "dir_path= %s, strerror= %s",
-				staging_dir, strerror(errno));
+		    staging_dir, strerror(errno));
 		return NULL;
 	}
 
@@ -232,7 +231,7 @@ GList *get_last_versions_list(int next_version, int max_versions)
 
 		if (lstat(filename, &stat)) {
 			LOG(NULL, "lstat failed", "path= %s, strerror= %s",
-					filename, strerror(errno));
+			    filename, strerror(errno));
 			continue;
 		}
 
@@ -272,7 +271,7 @@ GList *get_last_versions_list(int next_version, int max_versions)
 		build_type = get_build_type(build_num);
 		next_item = g_list_next(cur_item);
 		if ((idx >= max_versions || build_type == DEV_BUILD) &&
-				build_num != jump_point && build_num != 0) {
+		    build_num != jump_point && build_num != 0) {
 			list = g_list_delete_link(list, cur_item);
 		} else if (idx == max_versions - 1 && build_num != 0) {
 			list = g_list_delete_link(list, cur_item);

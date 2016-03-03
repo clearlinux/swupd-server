@@ -37,17 +37,16 @@
 
 #include "swupd.h"
 
-
-FILE * fopen_exclusive(const char *filename) /* no mode, opens for write only */
+FILE *fopen_exclusive(const char *filename) /* no mode, opens for write only */
 {
-        int fd;
+	int fd;
 
-        fd = open(filename,O_CREAT | O_EXCL | O_RDWR , 00644);
-        if (fd < 0) {
+	fd = open(filename, O_CREAT | O_EXCL | O_RDWR, 00644);
+	if (fd < 0) {
 		printf("exclusive open failed, filename=\"%s\",err=\"%s\"\n",
-			filename, strerror(errno));
+		       filename, strerror(errno));
 		LOG(NULL, "exclusive open failed", "\\*filename=\"%s\",err=\"%s\"*\\",
-			filename, strerror(errno));
+		    filename, strerror(errno));
 		return NULL;
 	}
 	return fdopen(fd, "w");
@@ -177,7 +176,7 @@ int system_argv(char *const argv[])
 		}
 
 		if (status != 0) {
-			char* cmdline = NULL;
+			char *cmdline = NULL;
 
 			concat_str_array(&cmdline, argv);
 			LOG(NULL, "Failed to run command:", "%s", cmdline);

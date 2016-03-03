@@ -37,20 +37,19 @@ void chroot_create_full(int newversion)
 {
 	int ret;
 	char *group;
-	char * command;
+	char *command;
 	char *full_dir;
 
 	string_or_die(&full_dir, "%s/%i/full/", image_dir, newversion);
 
 	g_mkdir_with_parents(full_dir, S_IRWXU);
 
-
 	/* start with base */
 	LOG(NULL, "Copying chroot os-core to full", "");
 	string_or_die(&command, "rsync -aAX %s/%i/os-core/ %s",
-	              image_dir, newversion, full_dir);
+		      image_dir, newversion, full_dir);
 	ret = system(command);
-	assert(ret==0);
+	assert(ret == 0);
 	free(command);
 
 	/* overlay any new files from each group */
@@ -62,9 +61,9 @@ void chroot_create_full(int newversion)
 
 		LOG(NULL, "Overlaying bundle chroot onto full", "%s", group);
 		string_or_die(&command, "rsync -aAX --ignore-existing %s/%i/%s/ %s",
-		             image_dir, newversion, group, full_dir);
+			      image_dir, newversion, group, full_dir);
 		ret = system(command);
-		assert(ret==0);
+		assert(ret == 0);
 		free(command);
 	}
 
@@ -82,9 +81,9 @@ void chroot_create_full(int newversion)
 
 		LOG(NULL, "Recopy bundle chroot out of full", "%s", group);
 		string_or_die(&command, "rsync -aAX --existing %s %s/%i/%s",
-		             full_dir, image_dir, newversion, group);
+			      full_dir, image_dir, newversion, group);
 		ret = system(command);
-		assert(ret==0);
+		assert(ret == 0);
 		free(command);
 	}
 	free(full_dir);

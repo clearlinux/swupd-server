@@ -32,9 +32,9 @@
 #include "swupd.h"
 
 static const struct option prog_opts[] = {
-	{"help", no_argument, 0, 'h'},
-	{"statedir", required_argument, 0, 'S'},
-	{0, 0, 0, 0}
+	{ "help", no_argument, 0, 'h' },
+	{ "statedir", required_argument, 0, 'S' },
+	{ 0, 0, 0, 0 }
 };
 
 static void usage(const char *name)

@@ -30,7 +30,6 @@
 
 static GKeyFile *keyfile = NULL;
 
-
 char *config_image_base(void)
 {
 	assert(keyfile != NULL);
@@ -67,7 +66,6 @@ int config_initial_version(void)
 	free(c);
 	return version;
 }
-
 
 bool read_configuration_file(char *filename)
 {

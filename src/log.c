@@ -93,7 +93,7 @@ void __log_message(struct file *file, char *msg, char *filename, int linenr, con
 	char filebuf2[4096];
 
 	if (!logfile) {
-		return;\
+		return;
 	}
 
 	gettimeofday(&current_time, NULL);
@@ -119,13 +119,12 @@ void __log_message(struct file *file, char *msg, char *filename, int linenr, con
 		strcat(filebuf2, " ");
 	}
 
-	fprintf(logfile, "%3i.%03i %5s %s:%03i\t| %s\t| %s\t| %s\n", 
-		(int)current_time.tv_sec, (int)current_time.tv_usec / 1000, logstring, filebuf, linenr, filebuf2, msg, buf);	
+	fprintf(logfile, "%3i.%03i %5s %s:%03i\t| %s\t| %s\t| %s\n",
+		(int)current_time.tv_sec, (int)current_time.tv_usec / 1000, logstring, filebuf, linenr, filebuf2, msg, buf);
 
 	free(logstring);
 	free(buf);
 	fflush(logfile);
-
 }
 
 void close_log(int version, int exit_status)
@@ -133,7 +132,7 @@ void close_log(int version, int exit_status)
 	struct timeval current_time;
 	int t_sec;
 	int t_msec;
-	
+
 	if (!logfile) {
 		return;
 	}

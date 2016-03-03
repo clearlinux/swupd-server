@@ -40,24 +40,24 @@
 #include "swupd.h"
 #include "xattrs.h"
 
-#define LINK_SIZE_HINT			1024
-#define DIR_SIZE_HINT			1024
+#define LINK_SIZE_HINT 1024
+#define DIR_SIZE_HINT 1024
 
 int file_sort_hash(gconstpointer a, gconstpointer b)
 {
 	struct file *A, *B;
-	A = (struct file *) a;
-	B = (struct file *) b;
+	A = (struct file *)a;
+	B = (struct file *)b;
 
 	/* this MUST be a memcmp(), not bcmp() */
-	return memcmp(A->hash, B->hash, SWUPD_HASH_LEN-1);
+	return memcmp(A->hash, B->hash, SWUPD_HASH_LEN - 1);
 }
 
 int file_sort_version(gconstpointer a, gconstpointer b)
 {
 	struct file *A, *B;
-	A = (struct file *) a;
-	B = (struct file *) b;
+	A = (struct file *)a;
+	B = (struct file *)b;
 
 	if (A->last_change < B->last_change) {
 		return -1;
@@ -73,8 +73,8 @@ int file_sort_filename(gconstpointer a, gconstpointer b)
 {
 	struct file *A, *B;
 	int ret;
-	A = (struct file *) a;
-	B = (struct file *) b;
+	A = (struct file *)a;
+	B = (struct file *)b;
 
 	ret = strcmp(A->filename, B->filename);
 	if (ret) {
@@ -104,7 +104,6 @@ struct manifest *alloc_manifest(int version, char *component)
 
 	return manifest;
 }
-
 
 struct manifest *manifest_from_file(int version, char *component)
 {
@@ -139,7 +138,7 @@ struct manifest *manifest_from_file(int version, char *component)
 		return NULL;
 	}
 
-	if (strncmp(line, "MANIFEST\t", 9)!=0) {
+	if (strncmp(line, "MANIFEST\t", 9) != 0) {
 		printf("Invalid file format: MANIFEST line\n");
 		fclose(infile);
 		return NULL;
@@ -151,7 +150,7 @@ struct manifest *manifest_from_file(int version, char *component)
 		return NULL;
 	}
 	line[0] = 0;
-	while (strcmp(line, "\n")!=0) {
+	while (strcmp(line, "\n") != 0) {
 		/* read the header */
 		line[0] = 0;
 		if (fgets(line, 8191, infile) == NULL) {
@@ -173,10 +172,10 @@ struct manifest *manifest_from_file(int version, char *component)
 			assert(0);
 		}
 
-		if (strncmp(line,"version:", 8) == 0) {
+		if (strncmp(line, "version:", 8) == 0) {
 			version = strtoull(c, NULL, 10);
 		}
-		if (strncmp(line,"previous:", 9) == 0) {
+		if (strncmp(line, "previous:", 9) == 0) {
 			previous = strtoull(c, NULL, 10);
 		}
 	}
@@ -286,7 +285,7 @@ struct manifest *manifest_from_file(int version, char *component)
 			manifest->files = g_list_prepend(manifest->files, file);
 		}
 		manifest->count++;
-		count ++;
+		count++;
 	}
 
 	manifest->files = g_list_sort(manifest->files, file_sort_filename);
@@ -295,7 +294,6 @@ struct manifest *manifest_from_file(int version, char *component)
 	free(filename);
 	return manifest;
 }
-
 
 void free_manifest(struct manifest *manifest)
 {
@@ -313,7 +311,6 @@ void free_manifest(struct manifest *manifest)
 	}
 	free(manifest);
 }
-
 
 /*
 backfill the "last changed" of each file in a manifest
@@ -355,7 +352,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 		file1->peer = NULL;
 		file2->peer = NULL;
 
-
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
 			if (file1->is_deleted && file2->is_deleted && file1->is_rename) {
@@ -364,16 +360,16 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 			}
 
 			if (hash_compare(file1->hash, file2->hash) &&
-				file1->is_dir == file2->is_dir &&
-				file1->is_link == file2->is_link &&
-				file1->is_deleted == file2->is_deleted &&
-				file1->is_file == file2->is_file &&
-				file1->is_config == file2->is_config &&
-				file1->is_state == file2->is_state &&
-				file1->is_boot == file2->is_boot &&
-				file1->last_change >= minversion) {
-					file2->last_change = file1->last_change;
-					file2->is_rename = file1->is_rename;
+			    file1->is_dir == file2->is_dir &&
+			    file1->is_link == file2->is_link &&
+			    file1->is_deleted == file2->is_deleted &&
+			    file1->is_file == file2->is_file &&
+			    file1->is_config == file2->is_config &&
+			    file1->is_state == file2->is_state &&
+			    file1->is_boot == file2->is_boot &&
+			    file1->last_change >= minversion) {
+				file2->last_change = file1->last_change;
+				file2->is_rename = file1->is_rename;
 			} else {
 				account_changed_file();
 				if (first) {
@@ -429,7 +425,7 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 			file1->peer = file3;
 
 			list1 = g_list_next(list1);
-			m2->files = g_list_prepend(m2->files, file3); 
+			m2->files = g_list_prepend(m2->files, file3);
 			m2->count++;
 			if (!file1->is_deleted) {
 				account_deleted_file();
@@ -449,7 +445,7 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 		count++;
 	}
 
-/* now deal with the tail ends */
+	/* now deal with the tail ends */
 	while (list1) {
 		file1 = list1->data;
 
@@ -513,7 +509,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	return count;
 }
 
-
 /* removes all files from m2 from m1 */
 void subtract_manifests(struct manifest *m1, struct manifest *m2)
 {
@@ -550,7 +545,7 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 
 			if (file1->is_deleted == file2->is_deleted && file1->is_file == file2->is_file) {
 				m1->files = g_list_delete_link(m1->files, todel);
-				m1->count --;
+				m1->count--;
 				continue;
 			}
 		}
@@ -562,9 +557,6 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 		list2 = g_list_next(list2);
 	}
 }
-
-
-
 
 char *file_type_to_string(struct file *file)
 {
@@ -653,7 +645,7 @@ static int write_manifest_signature(struct manifest *manifest, const char *suffi
 		assert(0);
 	}
 	string_or_die(&filename, "%s/%i/Manifest.%s%s", conf, manifest->version,
-			manifest->component, suffix);
+		      manifest->component, suffix);
 	if (!signature_sign(filename)) {
 		fprintf(stderr, "Creating signature for '%s' failed\n", filename);
 		goto exit;
@@ -688,7 +680,7 @@ static int write_manifest_plain(struct manifest *manifest)
 	}
 	dir = dirname(base);
 
-	if (g_mkdir_with_parents(dir,  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+	if (g_mkdir_with_parents(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
 		assert(0);
 	}
 
@@ -751,19 +743,19 @@ static int write_manifest_tar(struct manifest *manifest)
 	int ret = -1;
 
 	if (conf == NULL) {
-	    assert(0);
+		assert(0);
 	}
 
 	/* now, tar the thing up for efficient full file download */
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
 		string_or_die(&tarcmd, "tar --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-			      "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
+				       "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component, manifest->component);
 	} else {
 		string_or_die(&tarcmd, "tar --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-			      "%s/%i/Manifest.%s.tar Manifest.%s",
+				       "%s/%i/Manifest.%s.tar Manifest.%s",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component);
 	}
@@ -949,7 +941,6 @@ void nest_manifest(struct manifest *parent, struct manifest *sub)
 	parent->count++;
 }
 
-
 /* adds a struct file for a submanifest and also adds it to the proper list */
 void nest_manifest_file(struct manifest *parent, struct file *file)
 {
@@ -961,10 +952,8 @@ void nest_manifest_file(struct manifest *parent, struct file *file)
 	parent->submanifests = g_list_prepend(parent->submanifests, sub);
 	parent->count++;
 
-
 	LOG(file, "Nest manifest file", "%s", file->filename);
 }
-
 
 int manifest_subversion(struct manifest *parent, char *group)
 {
@@ -1030,7 +1019,6 @@ static void maximize_version_manifests(struct manifest *m1, struct manifest *m2)
 		list2 = g_list_next(list2);
 	}
 }
-
 
 /*
  * We need this in case files move modules;
@@ -1173,16 +1161,14 @@ void consolidate_submanifests(struct manifest *manifest)
 
 		/* (case 6) all others constitute errors */
 		LOG(NULL, "unhandled filename pair: file1", "%s %s (%d), file2 %s %s (%d)",
-			file1->filename, file1->hash, file1->last_change,
-			file1->filename, file2->hash, file2->last_change);
+		    file1->filename, file1->hash, file1->last_change,
+		    file1->filename, file2->hash, file2->last_change);
 		manifest->files = g_list_delete_link(manifest->files, list);
 		list = g_list_next(next);
 		manifest->files = g_list_delete_link(manifest->files, next);
 		printf("CONFLICT IN MANIFESTS\n");
-
 	}
 }
-
 
 int previous_version_manifest(struct manifest *mom, char *name)
 {
@@ -1203,4 +1189,3 @@ int previous_version_manifest(struct manifest *mom, char *name)
 	}
 	return 0;
 }
-

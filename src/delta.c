@@ -138,7 +138,8 @@ void __create_delta(struct file *file, int from_version)
 		}
 		LOG(NULL, "Failed to rename", "");
 	}
-out:	free(sanitycheck);
+out:
+	free(sanitycheck);
 	free(testnewfile);
 	free(conf);
 	free(newfile);
@@ -155,7 +156,6 @@ void prepare_delta_dir(struct manifest *manifest)
 	printf("Preparing delta directory \n");
 
 	conf = config_output_dir();
-
 
 	string_or_die(&path, "%s/%i", conf, manifest->version);
 	if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
@@ -176,4 +176,3 @@ void prepare_delta_dir(struct manifest *manifest)
 	free(path);
 	free(conf);
 }
-

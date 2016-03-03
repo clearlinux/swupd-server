@@ -31,8 +31,6 @@
 
 #include "swupd.h"
 
-
-
 /* TODO: this needs to come from a file that has a list of regexps */
 
 static void config_file_heuristics(struct file *file)

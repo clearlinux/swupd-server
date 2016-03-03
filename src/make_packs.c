@@ -46,10 +46,10 @@ static void banner(void)
 }
 
 static const struct option prog_opts[] = {
-	{"help", no_argument, 0, 'h'},
-	{"statedir", required_argument, 0, 'S'},
-	{"signcontent", no_argument, 0, 's'},
-	{0, 0, 0, 0}
+	{ "help", no_argument, 0, 'h' },
+	{ "statedir", required_argument, 0, 'S' },
+	{ "signcontent", no_argument, 0, 's' },
+	{ 0, 0, 0, 0 }
 };
 
 static void usage(const char *name)
@@ -158,8 +158,8 @@ int main(int argc, char **argv)
 	signature_terminate();
 
 	printf("Pack creation %s (pack-%s %i to %li)\n",
-		exit_status == EXIT_SUCCESS ? "complete" : "failed",
-		module, start_version, end_version);
+	       exit_status == EXIT_SUCCESS ? "complete" : "failed",
+	       module, start_version, end_version);
 
 	free_state_globals();
 	return exit_status;

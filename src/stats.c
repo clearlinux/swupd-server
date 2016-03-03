@@ -32,15 +32,11 @@
 
 #include "swupd.h"
 
-
-
-
 static int new_files;
 static int deleted_files;
 static int changed_files;
 static int delta_miss;
 static int delta_hit;
-
 
 void account_new_file(void)
 {
@@ -62,7 +58,6 @@ void account_delta_hit(void)
 	delta_hit++;
 }
 
-
 void account_delta_miss(void)
 {
 	delta_miss++;
@@ -83,8 +78,6 @@ int have_new_files(void)
 	}
 	return 0;
 }
-
-
 
 void print_statistics(int version1, int version2)
 {

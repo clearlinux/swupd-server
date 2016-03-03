@@ -8,12 +8,12 @@
 
 #include "config.h"
 
-#define __unused__  __attribute__ ((__unused__))
+#define __unused__ __attribute__((__unused__))
 
 // SWUPD_NUM_PACKS is also "PREV_CHECK" in releas tool swupd_bb.py (change both)
-#define SWUPD_NUM_PACKS			4
-#define SWUPD_NUM_MANIFEST_DELTAS		25
-#define SWUPD_DEFAULT_FORMAT	3
+#define SWUPD_NUM_PACKS 4
+#define SWUPD_NUM_MANIFEST_DELTAS 25
+#define SWUPD_DEFAULT_FORMAT 3
 
 #define SWUPD_SERVER_STATE_DIR "/var/lib/update"
 
@@ -31,8 +31,8 @@
 
 /* Build types */
 #define REGULAR_BUILD 0
-#define FIX_BUILD     1
-#define DEV_BUILD     2
+#define FIX_BUILD 1
+#define DEV_BUILD 2
 
 /* We don't have BZIP2 support in Android.  This define translates to "ifdef 0"
  * and demarcates codes which otherwise would enable BZIP2.  If this define
@@ -57,7 +57,7 @@ struct manifest {
 	int count;
 	uint64_t contentsize;
 	GList *files;
-	GList *manifests;    /* as struct file */
+	GList *manifests; /* as struct file */
 
 	GList *submanifests; /* as struct manifest */
 };
@@ -66,57 +66,57 @@ struct file;
 struct header;
 
 struct update_stat {
-	uint64_t	st_mode;
-	uint64_t	st_uid;
-	uint64_t	st_gid;
-	uint64_t	st_rdev;
-	uint64_t	st_size;
+	uint64_t st_mode;
+	uint64_t st_uid;
+	uint64_t st_gid;
+	uint64_t st_rdev;
+	uint64_t st_size;
 };
 
 #define DIGEST_LEN_SHA256 64
 /* +1 for null termination */
-#define SWUPD_HASH_LEN (DIGEST_LEN_SHA256+1)
+#define SWUPD_HASH_LEN (DIGEST_LEN_SHA256 + 1)
 
 struct file {
 	char *filename;
 	char hash[SWUPD_HASH_LEN];
 	bool use_xattrs;
-	int  last_change; 
+	int last_change;
 
 	struct update_stat stat;
 
 	/* the following are exclusive */
-	unsigned int is_dir		: 1;
-	unsigned int is_file		: 1;
-	unsigned int is_link		: 1;
-	unsigned int is_deleted		: 1;
-	unsigned int is_manifest	: 1;
-	
+	unsigned int is_dir : 1;
+	unsigned int is_file : 1;
+	unsigned int is_link : 1;
+	unsigned int is_deleted : 1;
+	unsigned int is_manifest : 1;
+
 	/* and these are modifiers */
-	unsigned int is_config		: 1;
-	unsigned int is_state		: 1;
-	unsigned int is_boot		: 1;
-	unsigned int is_rename		: 1;
+	unsigned int is_config : 1;
+	unsigned int is_state : 1;
+	unsigned int is_boot : 1;
+	unsigned int is_rename : 1;
 
-	struct file *peer;  /* same file in another manifest */
-	
-        /* data fields to help rename detection */
-        double		rename_score;
-        struct file 	*rename_peer;
-        char		*alpha_only_filename;  /* filename minus all numerics/etc */
-        char		*filetype;
-	char		*basename;
-	char		*dirname;        
-        /* end of rename detection fields */
+	struct file *peer; /* same file in another manifest */
 
-	unsigned int multithread	: 1;  /* if set to 1, current file is computed in a
+	/* data fields to help rename detection */
+	double rename_score;
+	struct file *rename_peer;
+	char *alpha_only_filename; /* filename minus all numerics/etc */
+	char *filetype;
+	char *basename;
+	char *dirname;
+	/* end of rename detection fields */
+
+	unsigned int multithread : 1; /* if set to 1, current file is computed in a
 						multithreaded process for fullfile creation */
 };
 
 struct packdata {
 	char *module;
-	int  from;
-	int  to;
+	int from;
+	int to;
 	int fullcount;
 	struct manifest *end_manifest;
 };
@@ -146,9 +146,9 @@ extern int file_sort_version(gconstpointer a, gconstpointer b);
 
 extern bool read_configuration_file(char *filename);
 extern void release_configuration_data(void);
-extern char * config_image_base(void);
-extern char * config_output_dir(void);
-extern char * config_empty_dir(void);
+extern char *config_image_base(void);
+extern char *config_output_dir(void);
+extern char *config_empty_dir(void);
 extern int config_initial_version(void);
 
 extern void read_current_version(char *filename);
@@ -228,7 +228,7 @@ extern void __create_delta(struct file *file, int from_version);
 extern void account_delta_hit(void);
 extern void account_delta_miss(void);
 
-extern FILE * fopen_exclusive(const char *filename); /* no mode, opens for write only */
+extern FILE *fopen_exclusive(const char *filename); /* no mode, opens for write only */
 extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
 extern void print_elapsed_time(struct timeval *previous_time, struct timeval *current_time);

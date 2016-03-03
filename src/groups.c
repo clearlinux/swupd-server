@@ -51,7 +51,6 @@ char *group_groups(char *group)
 	return g_key_file_get_value(groupfile, group, "groups", NULL);
 }
 
-
 void read_group_file(char *filename)
 {
 	GError *error = NULL;
@@ -75,7 +74,6 @@ void release_group_file(void)
 		groupfile = NULL;
 	}
 }
-
 
 char *next_group(void)
 {

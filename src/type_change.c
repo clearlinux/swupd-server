@@ -76,7 +76,7 @@ static bool type_has_changed(struct file *file)
 
 	LOG(file, "Type change", "%c to %c", type1, type2);
 	fprintf(stderr, "Type change from %c to %c for %s\n", type1, type2,
-			file->filename);
+		file->filename);
 
 	if (((type1 == 'F') && (type2 == 'L')) ||
 	    ((type1 == 'F') && (type2 == 'D')) ||
@@ -106,7 +106,7 @@ void type_change_detection(struct manifest *manifest)
 
 	if (n != 0) {
 		printf("Detected %d file type changes in component %s.. exiting\n",
-			n, manifest->component);
+		       n, manifest->component);
 		exit(EXIT_FAILURE);
 	}
 }

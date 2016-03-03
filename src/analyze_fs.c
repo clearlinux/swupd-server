@@ -44,13 +44,13 @@ static GThreadPool *threadpool;
 
 void hash_assign(char *src, char *dst)
 {
-	memcpy(dst, src, SWUPD_HASH_LEN-1);
-	dst[SWUPD_HASH_LEN-1] = '\0';
+	memcpy(dst, src, SWUPD_HASH_LEN - 1);
+	dst[SWUPD_HASH_LEN - 1] = '\0';
 }
 
 bool hash_compare(char *hash1, char *hash2)
 {
-	if (bcmp(hash1, hash2, SWUPD_HASH_LEN-1) == 0) {
+	if (bcmp(hash1, hash2, SWUPD_HASH_LEN - 1) == 0) {
 		return true;
 	} else {
 		return false;
@@ -100,8 +100,8 @@ static void hmac_sha256_for_data(char *hash,
 }
 
 static void hmac_sha256_for_string(char *hash,
-				    const unsigned char *key, size_t key_len,
-				    const char *str)
+				   const unsigned char *key, size_t key_len,
+				   const char *str)
 {
 	if (str == NULL) {
 		hash_set_zeros(hash);
@@ -110,7 +110,6 @@ static void hmac_sha256_for_string(char *hash,
 
 	hmac_sha256_for_data(hash, key, key_len, (const unsigned char *)str, strlen(str));
 }
-
 
 static void hmac_compute_key(const char *filename,
 			     const struct update_stat *updt_stat,
@@ -124,14 +123,14 @@ static void hmac_compute_key(const char *filename,
 	}
 
 	hmac_sha256_for_data(key, (const unsigned char *)updt_stat,
-				    sizeof(struct update_stat),
-				    (const unsigned char *)xattrs_blob,
-				    xattrs_blob_len);
+			     sizeof(struct update_stat),
+			     (const unsigned char *)xattrs_blob,
+			     xattrs_blob_len);
 
 	if (hash_is_zeros(key)) {
 		*key_len = 0;
 	} else {
-		*key_len = SWUPD_HASH_LEN-1;
+		*key_len = SWUPD_HASH_LEN - 1;
 	}
 
 	if (xattrs_blob_len != 0) {
@@ -203,14 +202,14 @@ int compute_hash(struct file *file, char *filename)
 		char link[PATH_MAX];
 		memset(link, 0, PATH_MAX);
 
-		ret = readlink(filename, link, PATH_MAX-1);
+		ret = readlink(filename, link, PATH_MAX - 1);
 
 		if (ret >= 0) {
 			hmac_compute_key(filename, &file->stat, key, &key_len, file->use_xattrs);
 			hmac_sha256_for_string(file->hash,
-					(const unsigned char *)key,
-					key_len,
-					link);
+					       (const unsigned char *)key,
+					       key_len,
+					       link);
 			return 0;
 		} else {
 			LOG(NULL, "readlink error ", "%i - %i / %s", ret, errno, strerror(errno));
@@ -221,9 +220,9 @@ int compute_hash(struct file *file, char *filename)
 	if (file->is_dir) {
 		hmac_compute_key(filename, &file->stat, key, &key_len, file->use_xattrs);
 		hmac_sha256_for_string(file->hash,
-					(const unsigned char *)key,
-					key_len,
-					file->filename);	//file->filename not filename
+				       (const unsigned char *)key,
+				       key_len,
+				       file->filename); //file->filename not filename
 		return 0;
 	}
 
@@ -238,10 +237,10 @@ int compute_hash(struct file *file, char *filename)
 
 	hmac_compute_key(filename, &file->stat, key, &key_len, file->use_xattrs);
 	hmac_sha256_for_data(file->hash,
-				(const unsigned char *)key,
-				key_len,
-				blob,
-				file->stat.st_size);
+			     (const unsigned char *)key,
+			     key_len,
+			     blob,
+			     file->stat.st_size);
 	munmap(blob, file->stat.st_size);
 	fclose(fl);
 	return 0;
@@ -281,8 +280,8 @@ static bool illegal_characters(char *filename)
 	char c;
 	int i;
 #define BAD_CHAR_COUNT 11
-	char bad_chars[BAD_CHAR_COUNT] = {';', '&', '|', '*', '`', '/',
-					  '<', '>', '\\', '\"', '\''};
+	char bad_chars[BAD_CHAR_COUNT] = { ';', '&', '|', '*', '`', '/',
+					   '<', '>', '\\', '\"', '\'' };
 
 	// these breaks the tar transform sed-like expression,
 	// hopefully can remove this check after moving to libtar
@@ -295,8 +294,8 @@ static bool illegal_characters(char *filename)
 		return true;
 	}
 
-	for(i=0; i<BAD_CHAR_COUNT; i++) {
-		c=bad_chars[i];
+	for (i = 0; i < BAD_CHAR_COUNT; i++) {
+		c = bad_chars[i];
 		if (strchr(filename, c) != NULL) {
 			printf("WARNING: Filename %s includes illegal character '%c'! ...skipping.\n", filename, c);
 			return true;
@@ -365,7 +364,7 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		if (do_hash) {
 			/* compute the hash from a thread */
 			ret = g_thread_pool_push(threadpool, file, &err);
-			if (ret == FALSE){
+			if (ret == FALSE) {
 				printf("GThread hash computation push error\n");
 				printf("%s\n", err->message);
 				closedir(dir);
@@ -378,7 +377,6 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 	closedir(dir);
 	free(fullpath);
 }
-
 
 struct manifest *full_manifest_from_directory(int version)
 {

@@ -36,8 +36,8 @@
 static char *make_filename(const char *, const char *, const char *);
 
 static const char *CMD_FMT = "openssl smime -sign -in %s -binary "
-	"-out %s.signed -outform PEM -md sha256 -inkey %s -signer %s "
-	"-certfile %s -passin file:%s";
+			     "-out %s.signed -outform PEM -md sha256 -inkey %s -signer %s "
+			     "-certfile %s -passin file:%s";
 
 static char *leaf_key = NULL;
 static char *leaf_cert = NULL;
@@ -61,7 +61,7 @@ bool signature_initialize(void)
 	struct stat s;
 
 	if (initialized) {
-	    return true;
+		return true;
 	}
 	cdir = getenv("SWUPD_CERTS_DIR");
 	if (cdir == NULL || cdir[0] == '\0') {
@@ -70,7 +70,7 @@ bool signature_initialize(void)
 	}
 	if (stat(cdir, &s)) {
 		printf("Can't stat certificates directory '%s' (%s)\n", cdir,
-			strerror(errno));
+		       strerror(errno));
 		goto err;
 	}
 	leaf_key = make_filename(cdir, "LEAF_KEY", "leaf key");
@@ -91,7 +91,7 @@ bool signature_initialize(void)
 	}
 	if (stat(passphrase, &s)) {
 		printf("Can't stat '%s' (%s)\n", passphrase,
-			strerror(errno));
+		       strerror(errno));
 		goto err;
 	}
 	initialized = true;
@@ -161,7 +161,7 @@ bool signature_sign(const char *filename)
 		return false;
 	}
 	string_or_die(&cmd, CMD_FMT, filename, filename, leaf_key, leaf_cert,
-			ca_chain_cert, passphrase);
+		      ca_chain_cert, passphrase);
 	status = system(cmd);
 	if (status) {
 		printf("Bad status %d from signing command:%s\n", status, cmd);

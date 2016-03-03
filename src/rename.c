@@ -35,18 +35,15 @@
 
 #include "swupd.h"
 
-
 #include <magic.h>
 
 static magic_t mcookie;
-
 
 double rename_score(struct file *old, struct file *new)
 {
 	double score = 0.0;
 	char *c;
 	int io, in;
-
 
 	/* if we have the same hash... sounds like a winner */
 	if (hash_compare(old->hash, new->hash)) {
@@ -88,14 +85,14 @@ double rename_score(struct file *old, struct file *new)
 		io--;
 		in--;
 	}
-	
+
 	/* if both start with /boot/vmlinuz give it a boost; this is a local hack due to vmlinuz being very short */
 	if (strncmp(old->filename, "/boot/vmlinuz", 13) == 0 && strncmp(new->filename, "/boot/vmlinuz", 13) == 0) {
 		score += 80;
 	}
 
 	/* if ELF, points for sharing the same soname to the first dot */
-	
+
 	/* negative points for not being within 25%+/-1Kb of the same file size */
 	if (old->stat.st_size > ((new->stat.st_size * 1.25) + 1024)) {
 		score -= 30;
@@ -152,7 +149,7 @@ static void precompute_file_data(struct manifest *manifest, struct file *file, i
 		c2++;
 	}
 
-	if (manifest)  {
+	if (manifest) {
 		string_or_die(&filename, "%s/%i/%s/%s", image_dir, manifest->version, manifest->component, file->filename);
 	} else if (old_rename) {
 		item = g_list_first(last_versions_list);
@@ -186,7 +183,7 @@ static void precompute_file_data(struct manifest *manifest, struct file *file, i
 		}
 	}
 
-	c1 = (char *) magic_file(mcookie, filename);
+	c1 = (char *)magic_file(mcookie, filename);
 	if (c1) {
 		char *c2;
 		file->filetype = strdup(c1);
@@ -205,17 +202,15 @@ static void precompute_file_data(struct manifest *manifest, struct file *file, i
 	free(filename);
 
 	file->basename = strdup(basename(file->filename));
-	file->dirname  = strdup(dirname(file->filename));
-
+	file->dirname = strdup(dirname(file->filename));
 }
-
 
 int file_sort_score(gconstpointer a, gconstpointer b)
 {
 	struct file *A, *B;
 
-	A = (struct file *) a;
-	B = (struct file *) b;
+	A = (struct file *)a;
+	B = (struct file *)b;
 
 	if (A->rename_score > B->rename_score) {
 		return -1;
@@ -240,7 +235,6 @@ static void score_file(GList *deleted_files, struct file *file)
 		file2 = list2->data;
 		list2 = g_list_next(list2);
 
-
 		assert(file2);
 		assert(file2->peer);
 
@@ -249,7 +243,6 @@ static void score_file(GList *deleted_files, struct file *file)
 			file->rename_score = score;
 			file->rename_peer = file2;
 		}
-
 	}
 }
 

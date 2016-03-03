@@ -24,7 +24,6 @@
  *
  */
 
-
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,18 +47,19 @@ static void banner(void)
 }
 
 static const struct option prog_opts[] = {
-	{"help", no_argument, 0, 'h'},
-	{"version", no_argument, 0, 'v'},
-	{"osversion", required_argument, 0, 'o'},
-	{"minversion", required_argument, 0, 'm'},
-	{"format", required_argument, 0, 'F'},
-	{"getformat", no_argument, 0, 'g'},
-	{"statedir", required_argument, 0, 'S'},
-	{"signcontent", no_argument, 0, 's'},
-	{0, 0, 0, 0}
+	{ "help", no_argument, 0, 'h' },
+	{ "version", no_argument, 0, 'v' },
+	{ "osversion", required_argument, 0, 'o' },
+	{ "minversion", required_argument, 0, 'm' },
+	{ "format", required_argument, 0, 'F' },
+	{ "getformat", no_argument, 0, 'g' },
+	{ "statedir", required_argument, 0, 'S' },
+	{ "signcontent", no_argument, 0, 's' },
+	{ 0, 0, 0, 0 }
 };
 
-static void print_help(const char *name) {
+static void print_help(const char *name)
+{
 	printf("Usage:\n");
 	printf("   %s [OPTION...]\n\n", name);
 	printf("Help Options:\n");
@@ -256,7 +256,6 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-
 	string_or_die(&file_path, "%s/server.ini", state_dir);
 	if (!read_configuration_file(file_path)) {
 		printf("Failed to read %s configuration file!\n", state_dir);
@@ -304,8 +303,8 @@ int main(int argc, char **argv)
 	/* Phase 2 : the os-core set */
 
 	/* Step 2: Make a manifest for the os-core set */
-	old_MoM =  manifest_from_file(current_version, "MoM");
-	new_MoM =  alloc_manifest(newversion, "MoM");
+	old_MoM = manifest_from_file(current_version, "MoM");
+	new_MoM = alloc_manifest(newversion, "MoM");
 	old_core = manifest_from_file(manifest_subversion(old_MoM, "os-core"), "os-core");
 	new_core = sub_manifest_from_directory("os-core", newversion);
 	add_component_hashes_to_manifest(new_core, new_full);
@@ -431,8 +430,7 @@ int main(int argc, char **argv)
 	printf("Entering phase 5: creating download content\n");
 	/* Phase 5: wrapping up */
 
-
-//TODO: should be fixup_versions() and preceed all write_manifest() calls
+	//TODO: should be fixup_versions() and preceed all write_manifest() calls
 	maximize_to_full(new_MoM, new_full);
 
 	sort_manifest_by_version(new_full);

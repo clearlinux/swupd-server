@@ -42,15 +42,14 @@
 static void create_fullfile(struct file *file)
 {
 	char *origin;
-	char *tarcommand=NULL;
-	char *tarname=NULL;
+	char *tarcommand = NULL;
+	char *tarname = NULL;
 	char *rename_source = NULL;
 	char *rename_target = NULL;
 	char *rename_tmpdir = NULL;
 	int ret;
 	struct stat sbuf;
 	char *empty, *indir, *outdir;
-
 
 	if (file->is_deleted) {
 		return; /* file got deleted -> by definition we cannot tar it up */
@@ -88,14 +87,14 @@ static void create_fullfile(struct file *file)
 		dir = dirname(tmp2);
 
 		string_or_die(&rename_tmpdir, "%s/XXXXXX", outdir);
-		if(!mkdtemp(rename_tmpdir)) {
+		if (!mkdtemp(rename_tmpdir)) {
 			LOG(NULL, "Failed to create temporary directory for %s move", origin);
 			assert(0);
 		}
 
 		string_or_die(&tarcommand, "tar -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s'/* '%s' 2> /dev/null | "
-			"tar -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
-			 dir, base, base, rename_tmpdir);
+					   "tar -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
+			      dir, base, base, rename_tmpdir);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
@@ -138,7 +137,7 @@ static void create_fullfile(struct file *file)
 		string_or_die(&tempfile, "%s/%s", empty, file->hash);
 		if (link(origin, tempfile) < 0) {
 			LOG(NULL, "hardlink failed", "%s due to %s (%s -> %s)", file->filename, strerror(errno), origin, tempfile);
-			char *const argv[] = {"cp", "-a", origin, tempfile, NULL};
+			char *const argv[] = { "cp", "-a", origin, tempfile, NULL };
 			if (system_argv(argv) != 0) {
 				assert(0);
 			}
@@ -147,7 +146,7 @@ static void create_fullfile(struct file *file)
 		/* step 2a: tar it with each compression type  */
 		// lzma
 		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -Jcf %s/%i/files/%s.tar.xz %s",
-			     empty, outdir, file->last_change, file->hash, file->hash);
+			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
@@ -155,7 +154,7 @@ static void create_fullfile(struct file *file)
 		free(tarcommand);
 		// gzip
 		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar.gz %s",
-			     empty, outdir, file->last_change, file->hash, file->hash);
+			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
@@ -163,7 +162,7 @@ static void create_fullfile(struct file *file)
 		free(tarcommand);
 #ifdef SWUPD_WITH_BZIP2
 		string_or_die(&tarcommand, "tar --directory=%s " TAR_PERM_ATTR_ARGS " -jcf %s/%i/files/%s.tar.bz2 %s",
-			     empty, outdir, file->last_change, file->hash, file->hash);
+			      empty, outdir, file->last_change, file->hash, file->hash);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
@@ -271,13 +270,13 @@ static void submit_fullfile_tasks(GList *files)
 	GList *item;
 	struct file *file;
 	int ret;
-	int count=0;
+	int count = 0;
 	GError *err = NULL;
 
 	LOG(NULL, "fullfile threadpool", "%d threads", sysconf(_SC_NPROCESSORS_ONLN) * 3);
 	threadpool = g_thread_pool_new(create_fullfile_task, NULL,
-				sysconf(_SC_NPROCESSORS_ONLN) * 3,
-				TRUE, NULL);
+				       sysconf(_SC_NPROCESSORS_ONLN) * 3,
+				       TRUE, NULL);
 
 	printf("Starting downloadable fullfiles data creation\n");
 
@@ -287,7 +286,7 @@ static void submit_fullfile_tasks(GList *files)
 		item = g_list_next(item);
 
 		ret = g_thread_pool_push(threadpool, file, &err);
-		if (ret == FALSE){
+		if (ret == FALSE) {
 			printf("GThread create_fullfile_task push error\n");
 			printf("%s\n", err->message);
 			assert(0);
@@ -321,10 +320,10 @@ void create_fullfiles(struct manifest *manifest)
 	conf = config_output_dir();
 
 	string_or_die(&path, "%s/%i", conf, manifest->version);
-	if(mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+	if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
 		if (errno != EEXIST) {
 			LOG(NULL, "Failed to create directory ", "%s", path);
-				return;
+			return;
 		}
 	}
 	free(path);
@@ -332,7 +331,7 @@ void create_fullfiles(struct manifest *manifest)
 	if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
 		if (errno != EEXIST) {
 			LOG(NULL, "Failed to create directory ", "%s", path);
-				return;
+			return;
 		}
 	}
 	free(path);
