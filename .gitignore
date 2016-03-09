@@ -27,3 +27,7 @@ cscope.*
 coverage/
 src/*.gcno
 src/*.gcda
+tap-driver.sh
+test/functional/*.log
+test/functional/*.trs
+test-suite.log

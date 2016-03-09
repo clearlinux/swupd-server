@@ -96,6 +96,25 @@ noinst_HEADERS = \
 	include/swupd.h \
 	include/xattrs.h
 
+TEST_EXTENSIONS = .sh
+
+if ENABLE_TESTS
+tap_driver = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+	$(top_srcdir)/tap-driver.sh
+
+LOG_DRIVER = $(tap_driver)
+SH_LOG_DRIVER = $(tap_driver)
+
+TESTS = $(dist_check_SCRIPTS)
+
+dist_check_SCRIPTS = \
+	test/functional/basic.bats \
+	test/functional/update.bats \
+	test/functional/fullfiles.bats \
+	test/functional/pack.bats \
+	test/functional/full-run.bats
+endif
+
 if COVERAGE
 AM_CFLAGS += --coverage
 

@@ -28,6 +28,11 @@ AC_ARG_ENABLE(
 		AC_DEFINE(SWUPD_WITH_STATELESS,1,[OS is stateless])
 )
 
+AC_ARG_ENABLE(
+  [tests],
+  [AS_HELP_STRING([--disable-tests], [Do not enable functional test framework (enabled by default)])]
+)
+
 have_coverage=no
 AC_ARG_ENABLE(coverage, AS_HELP_STRING([--enable-coverage], [enable test coverage]))
 if test "$enable_coverage" = "yes" ; then
@@ -47,6 +52,14 @@ if test "$enable_coverage" = "yes" ; then
 fi
 AM_CONDITIONAL([COVERAGE], [test "$have_coverage" = "yes"])
 
+AS_IF([test "$enable_tests" != "no"], [
+  AC_PATH_PROG([have_bats], [bats])
+  AS_IF([test -z "${have_bats}"], [
+    AC_MSG_ERROR([Must have the Bash Automated Testing System (bats) installed to run functional tests])
+  ])
+])
+AM_CONDITIONAL([ENABLE_TESTS], [test "$enable_tests" != "no"])
+
 AS_IF([test "$enable_bzip2" != "no"], [
   AC_CHECK_LIB([bz2], [BZ2_bzBuffToBuffCompress], [], [AC_MSG_ERROR([the libbz2 library is missing])])
   AC_CHECK_PROGS(BZIP2, bzip2)
@@ -61,4 +74,5 @@ AS_IF([test "$enable_lzma" != "no"], [
 AM_CONDITIONAL([ENABLE_LZMA], [test "$enable_lzma" != "no"])
 
 AC_CONFIG_FILES([Makefile])
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_OUTPUT
