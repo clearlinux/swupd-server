@@ -112,7 +112,8 @@ dist_check_SCRIPTS = \
 	test/functional/update.bats \
 	test/functional/fullfiles.bats \
 	test/functional/pack.bats \
-	test/functional/full-run.bats
+	test/functional/full-run.bats \
+	test/functional/full-run-delta.bats
 endif
 
 if COVERAGE
