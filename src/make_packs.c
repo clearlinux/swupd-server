@@ -107,13 +107,14 @@ int main(int argc, char **argv)
 		free_state_globals();
 		return EXIT_FAILURE;
 	}
-	banner();
-	check_root();
 
 	if (argc - optind != 3) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+
+	banner();
+	check_root();
 
 	/* FIXME: should use "end_version" not "0" and a unique filename
 	init_log(0);

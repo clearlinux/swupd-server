@@ -93,18 +93,19 @@ int main(int argc, char **argv)
 		free_state_globals();
 		return EXIT_FAILURE;
 	}
-	banner();
-	check_root();
-
-	string_or_die(&file_path, "%s/server.ini", state_dir);
-	read_configuration_file(file_path);
-	free(file_path);
 
 	if (argc - optind != 1) {
 		usage(argv[0]);
 		free_state_globals();
 		exit(EXIT_FAILURE);
 	}
+
+	banner();
+	check_root();
+
+	string_or_die(&file_path, "%s/server.ini", state_dir);
+	read_configuration_file(file_path);
+	free(file_path);
 
 	version = strtoull(argv[optind++], NULL, 10);
 	if (version < 0) {
