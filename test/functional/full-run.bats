@@ -8,7 +8,7 @@ setup() {
   export DIR
 
   init_server_ini
-  init_latest_ver 0
+  set_latest_ver 0
   init_groups_ini os-core test-bundle
 
   set_os_release 10 os-core

@@ -12,7 +12,7 @@ init_server_ini() {
   sed -i "s|/var/lib/update|$DIR|" $DIR/server.ini
 }
 
-init_latest_ver() {
+set_latest_ver() {
   echo "$1" > $DIR/image/latest.version
 }
 

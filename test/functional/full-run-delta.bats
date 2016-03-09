@@ -8,7 +8,7 @@ setup() {
   export DIR
 
   init_server_ini
-  init_latest_ver 0
+  set_latest_ver 0
   init_groups_ini os-core test-bundle
 
   set_os_release 10 os-core
@@ -27,6 +27,8 @@ setup() {
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle
+
+  set_latest_ver 10
 
   # then the second version...
   sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR
