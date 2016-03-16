@@ -70,6 +70,8 @@ struct manifest {
 	GList *manifests; /* as struct file */
 
 	GList *submanifests; /* as struct manifest */
+
+	GList *includes; /* struct manifests for all bundles included into this one */
 };
 
 struct file;
