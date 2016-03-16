@@ -20,11 +20,11 @@
  *
  */
 
+#include <assert.h>
+#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <assert.h>
-#include <glib.h>
 
 #include "swupd.h"
 

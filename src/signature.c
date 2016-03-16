@@ -21,6 +21,7 @@
  */
 
 #define _GNU_SOURCE
+#include <err.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -29,7 +30,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <err.h>
 
 #include "swupd.h"
 

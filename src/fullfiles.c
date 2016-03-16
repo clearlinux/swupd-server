@@ -22,18 +22,17 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <errno.h>
+#include <glib.h>
+#include <libgen.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <stdint.h>
-#include <errno.h>
-#include <libgen.h>
-
-#include <glib.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "swupd.h"
 
@@ -92,8 +91,7 @@ static void create_fullfile(struct file *file)
 			assert(0);
 		}
 
-		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s/?*' './%s' 2> /dev/null | "
-			      TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
+		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s/?*' './%s' 2> /dev/null | " TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
 			      dir, base, base, rename_tmpdir);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);

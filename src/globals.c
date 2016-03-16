@@ -21,13 +21,13 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
+#include <unistd.h>
 
 #include "swupd.h"
 
