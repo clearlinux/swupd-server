@@ -23,19 +23,17 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <bsdiff.h>
+#include <errno.h>
+#include <glib.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <bsdiff.h>
-
-#include <glib.h>
+#include <unistd.h>
 
 #include "swupd.h"
 #include "xattrs.h"
@@ -750,12 +748,12 @@ static int write_manifest_tar(struct manifest *manifest)
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
 		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-				       "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
+						   "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component, manifest->component);
 	} else {
 		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-				       "%s/%i/Manifest.%s.tar Manifest.%s",
+						   "%s/%i/Manifest.%s.tar Manifest.%s",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component);
 	}

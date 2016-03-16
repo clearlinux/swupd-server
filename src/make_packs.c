@@ -21,20 +21,18 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <dirent.h>
+#include <errno.h>
+#include <getopt.h>
+#include <getopt.h>
+#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <getopt.h>
-
-#include <glib.h>
-
-#include <getopt.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "swupd.h"
 

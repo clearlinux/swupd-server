@@ -25,17 +25,17 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <errno.h>
+#include <getopt.h>
+#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <glib.h>
-#include <errno.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <sys/time.h>
-#include <getopt.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "swupd.h"
 
