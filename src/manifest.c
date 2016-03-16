@@ -658,6 +658,7 @@ exit:
 /* Returns 0 == success, -1 == failure */
 static int write_manifest_plain(struct manifest *manifest)
 {
+	GList *includes;
 	GList *list;
 	struct file *file;
 	FILE *out = NULL;
@@ -695,6 +696,12 @@ static int write_manifest_plain(struct manifest *manifest)
 	fprintf(out, "timestamp:\t%i\n", (int)time(NULL));
 	compute_content_size(manifest);
 	fprintf(out, "contentsize:\t%llu\n", (long long unsigned int)manifest->contentsize);
+	includes = manifest->includes;
+	while (includes) {
+		struct manifest *sub = includes->data;
+		includes = g_list_next(includes);
+		fprintf(out, "includes:\t%s\n", sub->component);
+	}
 	fprintf(out, "\n");
 
 	list = g_list_first(manifest->files);
