@@ -377,8 +377,8 @@ int main(int argc, char **argv)
 		newm->prevversion = oldm->version;
 
 		/* Step 5: Subtract the core files from the manifest */
-		subtract_manifests(oldm, old_core);
-		subtract_manifests(newm, new_core);
+		subtract_manifests_frontend(oldm, old_core);
+		subtract_manifests_frontend(newm, new_core);
 
 		/* Step 6: Compare manifest to the previous version... */
 		if (match_manifests(oldm, newm) == 0) {

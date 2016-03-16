@@ -507,21 +507,49 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	return count;
 }
 
-/* removes all files from m2 from m1 */
+static GList *get_unique_includes(struct manifest *manifest)
+{
+	GHashTable *unique_includes = g_hash_table_new(g_str_hash, g_str_equal);
+	GHashTableIter iter;
+	GList *includes = NULL;
+	GList *l1, *l2;
+	gpointer k, v;
+
+	l1 = g_list_first(manifest->includes);
+	while (l1) {
+		struct manifest *m = l1->data;
+		l1 = g_list_next(l1);
+		(void)g_hash_table_replace(unique_includes, m->component, m);
+		l2 = get_unique_includes(m);
+		while (l2) {
+			struct manifest *m = l2->data;
+			l2 = g_list_next(l2);
+			(void)g_hash_table_replace(unique_includes, m->component, m);
+		}
+		g_list_free(l2);
+	}
+	g_hash_table_iter_init(&iter, unique_includes);
+	while (g_hash_table_iter_next(&iter, &k, &v)) {
+		includes = g_list_prepend(includes, v);
+	}
+
+	return includes;
+}
+
+/*
+ * removes all files from m2 from m1
+ * This will recurse over all included manifests to also
+ * subtract those from the m1 manifest.
+ *
+ * As a special convenient semantics,
+ * subtract_manifests(M, M)
+ * will subtract all included manifests from M,
+ * but will not subtract M from M itself.
+ */
 void subtract_manifests(struct manifest *m1, struct manifest *m2)
 {
 	GList *list1, *list2;
 	struct file *file1, *file2;
-
-	if (!m1) {
-		printf("Subtracting manifests failed: No m1 manifest!\n");
-		return;
-	}
-
-	if (!m2) {
-		printf("Subtracting manifests failed: No m2 manifest!\n");
-		return;
-	}
 
 	m1->files = g_list_sort(m1->files, file_sort_filename);
 	m2->files = g_list_sort(m2->files, file_sort_filename);
@@ -529,7 +557,7 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 	list1 = g_list_first(m1->files);
 	list2 = g_list_first(m2->files);
 
-	while (list1 && list2) {
+	while (list1 && list2 && m1 != m2) {
 		int ret;
 		file1 = list1->data;
 		file2 = list2->data;
@@ -550,6 +578,31 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 		} else {
 			list2 = g_list_next(list2);
 		}
+	}
+}
+
+void subtract_manifests_frontend(struct manifest *m1, struct manifest *m2)
+{
+	GList *includes;
+	struct manifest *m;
+
+	if (!m1) {
+		printf("Subtracting manifests failed: No m1 manifest!\n");
+		return;
+	}
+
+	if (!m2) {
+		printf("Subtracting manifests failed: No m2 manifest!\n");
+		return;
+	}
+
+	subtract_manifests(m1, m2);
+
+	includes = get_unique_includes(m2);
+	while (includes) {
+		m = includes->data;
+		includes = g_list_next(includes);
+		subtract_manifests(m1, m);
 	}
 }
 
