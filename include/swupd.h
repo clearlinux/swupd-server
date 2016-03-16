@@ -178,7 +178,7 @@ extern void sort_manifest_by_version(struct manifest *manifest);
 extern int prune_manifest(struct manifest *manifest);
 extern void create_manifest_delta(int oldversion, int newversion, char *module);
 extern void create_manifest_deltas(struct manifest *manifest, GList *last_versions_list);
-extern void subtract_manifests(struct manifest *m1, struct manifest *m2);
+extern void subtract_manifests(struct manifest *m1, struct manifest *m2, GList *includes);
 extern void nest_manifest(struct manifest *parent, struct manifest *sub);
 extern void nest_manifest_file(struct manifest *parent, struct file *file);
 extern int manifest_subversion(struct manifest *parent, char *group);

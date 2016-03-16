@@ -507,11 +507,21 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	return count;
 }
 
-/* removes all files from m2 from m1 */
-void subtract_manifests(struct manifest *m1, struct manifest *m2)
+/*
+ * removes all files from m2 from m1
+ * This will recurse over all included manifests to also
+ * subtract those from the m1 manifest.
+ *
+ * As a special convenient semantics,
+ * subtract_manifests(M, M)
+ * will subtract all included manifests from M,
+ * but will not subtract M from M itself.
+ */
+void subtract_manifests(struct manifest *m1, struct manifest *m2, GList *includes)
 {
 	GList *list1, *list2;
 	struct file *file1, *file2;
+	struct manifest *mi;
 
 	if (!m1) {
 		printf("Subtracting manifests failed: No m1 manifest!\n");
@@ -529,7 +539,7 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 	list1 = g_list_first(m1->files);
 	list2 = g_list_first(m2->files);
 
-	while (list1 && list2) {
+	while (list1 && list2 && m1 != m2) {
 		int ret;
 		file1 = list1->data;
 		file2 = list2->data;
@@ -553,6 +563,13 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 			continue;
 		}
 		list2 = g_list_next(list2);
+	}
+
+	/* now recurse into the included manifests and subtract those as well */
+	while (includes) {
+		mi = includes->data;
+		includes = g_list_next(includes);
+		subtract_manifests(m1, mi, includes);
 	}
 }
 
