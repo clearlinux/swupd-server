@@ -22,6 +22,10 @@ setup() {
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle
+
+  # zero packs should exist (non-zero size) for the build
+  [ -s $DIR/www/10/pack-os-core-from-0.tar ]
+  [ -s $DIR/www/10/pack-test-bundle-from-0.tar ]
 }
 
 teardown() {

@@ -39,6 +39,16 @@ setup() {
   # and with delta packs this time
   sudo $srcdir/swupd_make_pack --statedir $DIR 10 20 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 10 20 test-bundle
+
+  # zero packs should exist (non-zero size) for both versions
+  [ -s $DIR/www/10/pack-os-core-from-0.tar ]
+  [ -s $DIR/www/10/pack-test-bundle-from-0.tar ]
+  [ -s $DIR/www/20/pack-os-core-from-0.tar ]
+  [ -s $DIR/www/20/pack-test-bundle-from-0.tar ]
+
+  # and delta packs should exist (non-zero size) for the latest version
+  [ -s $DIR/www/20/pack-os-core-from-10.tar ]
+  [ -s $DIR/www/20/pack-test-bundle-from-10.tar ]
 }
 
 teardown() {
