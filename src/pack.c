@@ -52,6 +52,7 @@ static void empty_pack_stage(int full, int from_version, int to_version, char *m
 	if (ret) {
 		fprintf(stderr, "Failed to clean %s/%s/%i_to_%i\n",
 			packstage_dir, module, from_version, to_version);
+		free(cmd);
 		exit(EXIT_FAILURE);
 	}
 	free(cmd);
