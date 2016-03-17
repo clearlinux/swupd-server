@@ -22,6 +22,7 @@ swupd_make_pack
 swupd-update-server.log*
 swupd_make_fullfiles
 swupd-server-*.tar.gz
+swupd-server.log.*
 cscope.*
 *.kdev4
 coverage/
