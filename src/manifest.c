@@ -106,6 +106,7 @@ struct manifest *alloc_manifest(int version, char *component)
 struct manifest *manifest_from_file(int version, char *component)
 {
 	FILE *infile;
+	GList *includes = NULL;
 	char line[8192], *c, *c2;
 	int count = 0;
 	struct manifest *manifest;
@@ -176,10 +177,17 @@ struct manifest *manifest_from_file(int version, char *component)
 		if (strncmp(line, "previous:", 9) == 0) {
 			previous = strtoull(c, NULL, 10);
 		}
+		if (strncmp(line, "includes:", 9) == 0) {
+			includes = g_list_prepend(includes, strdup(c));
+			if (!includes->data) {
+				abort();
+			}
+		}
 	}
 
 	manifest = alloc_manifest(version, component);
 	manifest->prevversion = previous;
+	manifest->includes = includes;
 
 	/* empty line */
 	while (!feof(infile)) {

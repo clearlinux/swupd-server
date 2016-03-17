@@ -15,6 +15,8 @@ setup() {
   set_os_release 10 test-bundle
   track_bundle 10 os-core
   track_bundle 10 test-bundle
+
+  gen_includes_file test-bundle 10 os-core
 }
 
 @test "full run update creation" {
@@ -26,6 +28,8 @@ setup() {
   # zero packs should exist (non-zero size) for the build
   [ -s $DIR/www/10/pack-os-core-from-0.tar ]
   [ -s $DIR/www/10/pack-test-bundle-from-0.tar ]
+
+  grep 'includes:	os-core' $DIR/www/10/Manifest.test-bundle
 }
 
 teardown() {

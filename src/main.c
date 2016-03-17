@@ -223,6 +223,8 @@ int main(int argc, char **argv)
 	struct manifest *old_full = NULL;
 	struct manifest *new_full = NULL;
 
+	GHashTable *new_manifests = g_hash_table_new(g_str_hash, g_str_equal);
+	GHashTable *old_manifests = g_hash_table_new(g_str_hash, g_str_equal);
 	GList *manifests_last_versions_list = NULL;
 	int newfiles = 0;
 
@@ -355,6 +357,43 @@ int main(int argc, char **argv)
 	printf("Entering phase 3: The bundles\n");
 	while (1) {
 		char *group = next_group();
+
+		if (!group) {
+			break;
+		}
+
+		(void)g_hash_table_insert(new_manifests, group, sub_manifest_from_directory(group, newversion));
+		(void)g_hash_table_insert(old_manifests, group, manifest_from_file(manifest_subversion(old_MoM, group), group));
+	}
+	while (1) {
+		GList *manifest_includes = NULL;
+		GList *name_includes;
+		char *group = next_group();
+		struct manifest *manifest;
+
+		if (!group) {
+			break;
+		}
+		manifest = g_hash_table_lookup(new_manifests, group);
+		name_includes = manifest->includes;
+		while (name_includes) {
+			char *name = name_includes->data;
+			name_includes = g_list_next(name_includes);
+			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(new_manifests, name));
+		}
+		manifest->includes = manifest_includes;
+		manifest_includes = NULL;
+		manifest = g_hash_table_lookup(old_manifests, group);
+		name_includes = manifest->includes;
+		while (name_includes) {
+			char *name = name_includes->data;
+			name_includes = g_list_next(name_includes);
+			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(new_manifests, name));
+		}
+		manifest->includes = manifest_includes;
+	}
+	while (1) {
+		char *group = next_group();
 		struct manifest *oldm;
 		struct manifest *newm;
 
@@ -369,8 +408,8 @@ int main(int argc, char **argv)
 		printf("Processing bundle %s\n", group);
 
 		/* Step 4: Make a manifest for this functonal group */
-		oldm = manifest_from_file(manifest_subversion(old_MoM, group), group);
-		newm = sub_manifest_from_directory(group, newversion);
+		oldm = g_hash_table_lookup(old_manifests, group);
+		newm = g_hash_table_lookup(new_manifests, group);
 		add_component_hashes_to_manifest(newm, new_full);
 		apply_heuristics(oldm);
 		apply_heuristics(newm);

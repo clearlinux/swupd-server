@@ -402,6 +402,58 @@ struct manifest *full_manifest_from_directory(int version)
 	return manifest;
 }
 
+/* Read includes from $manifest-includes file */
+GList *get_sub_manifest_includes(char *component, int version)
+{
+	FILE *infile;
+	GList *includes = NULL;
+	char *c;
+	char *conf;
+	char *filename;
+	char *included;
+	char line[8192];
+
+	conf = config_output_dir();
+	if (conf == NULL) {
+		assert(0);
+	}
+
+	string_or_die(&filename, "%s/%i/noship/%s-includes", conf, version, component);
+	free(conf);
+
+	LOG(NULL, "Reading includes", "%s", filename);
+	infile = fopen(filename, "rb");
+
+	if (infile == NULL) {
+		if (errno != ENOENT) {
+			LOG(NULL, "Cannot read includes", "%s (%s)\n", filename, strerror(errno));
+		}
+		free(filename);
+		return NULL;
+	}
+
+	line[0] = 0;
+	while (strcmp(line, "\n") != 0) {
+		line[0] = 0;
+		if (fgets(line, 8191, infile) == NULL) {
+			break;
+		}
+		c = strchr(line, '\n');
+		if (c) {
+			*c = 0;
+		}
+		if (strlen(line) == 0) {
+			break;
+		}
+		included = strdup(line);
+		includes = g_list_prepend(includes, included);
+	}
+	fclose(infile);
+	includes = g_list_sort(includes, (GCompareFunc)strcmp);
+
+	return includes;
+}
+
 struct manifest *sub_manifest_from_directory(char *component, int version)
 {
 	struct manifest *manifest;
@@ -418,6 +470,8 @@ struct manifest *sub_manifest_from_directory(char *component, int version)
 	free(dir);
 
 	manifest->files = g_list_sort(manifest->files, file_sort_filename);
+
+	manifest->includes = get_sub_manifest_includes(component, version);
 
 	return manifest;
 }
