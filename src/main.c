@@ -388,7 +388,7 @@ int main(int argc, char **argv)
 		while (name_includes) {
 			char *name = name_includes->data;
 			name_includes = g_list_next(name_includes);
-			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(new_manifests, name));
+			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(old_manifests, name));
 		}
 		manifest->includes = manifest_includes;
 	}
@@ -415,9 +415,13 @@ int main(int argc, char **argv)
 		apply_heuristics(newm);
 		newm->prevversion = oldm->version;
 
+		/* add os-core as an included manifest */
+		oldm->includes = g_list_prepend(oldm->includes, old_core);
+		newm->includes = g_list_prepend(newm->includes, new_core);
+
 		/* Step 5: Subtract the core files from the manifest */
-		subtract_manifests_frontend(oldm, old_core);
-		subtract_manifests_frontend(newm, new_core);
+		subtract_manifests_frontend(oldm, oldm);
+		subtract_manifests_frontend(newm, newm);
 
 		/* Step 6: Compare manifest to the previous version... */
 		if (match_manifests(oldm, newm) == 0) {
