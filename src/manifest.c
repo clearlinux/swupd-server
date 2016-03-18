@@ -546,15 +546,12 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 			if (file1->is_deleted == file2->is_deleted && file1->is_file == file2->is_file) {
 				m1->files = g_list_delete_link(m1->files, todel);
 				m1->count--;
-				continue;
 			}
-		}
-
-		if (ret < 0) {
+		} else if (ret < 0) {
 			list1 = g_list_next(list1);
-			continue;
+		} else {
+			list2 = g_list_next(list2);
 		}
-		list2 = g_list_next(list2);
 	}
 }
 
