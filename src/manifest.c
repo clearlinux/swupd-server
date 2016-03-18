@@ -23,19 +23,17 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <bsdiff.h>
+#include <errno.h>
+#include <glib.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <bsdiff.h>
-
-#include <glib.h>
+#include <unistd.h>
 
 #include "swupd.h"
 #include "xattrs.h"
@@ -108,6 +106,7 @@ struct manifest *alloc_manifest(int version, char *component)
 struct manifest *manifest_from_file(int version, char *component)
 {
 	FILE *infile;
+	GList *includes = NULL;
 	char line[8192], *c, *c2;
 	int count = 0;
 	struct manifest *manifest;
@@ -178,10 +177,17 @@ struct manifest *manifest_from_file(int version, char *component)
 		if (strncmp(line, "previous:", 9) == 0) {
 			previous = strtoull(c, NULL, 10);
 		}
+		if (strncmp(line, "includes:", 9) == 0) {
+			includes = g_list_prepend(includes, strdup(c));
+			if (!includes->data) {
+				abort();
+			}
+		}
 	}
 
 	manifest = alloc_manifest(version, component);
 	manifest->prevversion = previous;
+	manifest->includes = includes;
 
 	/* empty line */
 	while (!feof(infile)) {
@@ -509,11 +515,21 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	return count;
 }
 
-/* removes all files from m2 from m1 */
-void subtract_manifests(struct manifest *m1, struct manifest *m2)
+/*
+ * removes all files from m2 from m1
+ * This will recurse over all included manifests to also
+ * subtract those from the m1 manifest.
+ *
+ * As a special convenient semantics,
+ * subtract_manifests(M, M)
+ * will subtract all included manifests from M,
+ * but will not subtract M from M itself.
+ */
+void subtract_manifests(struct manifest *m1, struct manifest *m2, GList *includes)
 {
 	GList *list1, *list2;
 	struct file *file1, *file2;
+	struct manifest *mi;
 
 	if (!m1) {
 		printf("Subtracting manifests failed: No m1 manifest!\n");
@@ -531,7 +547,7 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 	list1 = g_list_first(m1->files);
 	list2 = g_list_first(m2->files);
 
-	while (list1 && list2) {
+	while (list1 && list2 && m1 != m2) {
 		int ret;
 		file1 = list1->data;
 		file2 = list2->data;
@@ -552,6 +568,13 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 		} else {
 			list2 = g_list_next(list2);
 		}
+	}
+
+	/* now recurse into the included manifests and subtract those as well */
+	while (includes) {
+		mi = includes->data;
+		includes = g_list_next(includes);
+		subtract_manifests(m1, mi, includes);
 	}
 }
 
@@ -657,6 +680,7 @@ exit:
 /* Returns 0 == success, -1 == failure */
 static int write_manifest_plain(struct manifest *manifest)
 {
+	GList *includes;
 	GList *list;
 	struct file *file;
 	FILE *out = NULL;
@@ -694,6 +718,12 @@ static int write_manifest_plain(struct manifest *manifest)
 	fprintf(out, "timestamp:\t%i\n", (int)time(NULL));
 	compute_content_size(manifest);
 	fprintf(out, "contentsize:\t%llu\n", (long long unsigned int)manifest->contentsize);
+	includes = manifest->includes;
+	while (includes) {
+		struct manifest *sub = includes->data;
+		includes = g_list_next(includes);
+		fprintf(out, "includes:\t%s\n", sub->component);
+	}
 	fprintf(out, "\n");
 
 	list = g_list_first(manifest->files);
@@ -747,12 +777,12 @@ static int write_manifest_tar(struct manifest *manifest)
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
 		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-				       "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
+						   "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component, manifest->component);
 	} else {
 		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-				       "%s/%i/Manifest.%s.tar Manifest.%s",
+						   "%s/%i/Manifest.%s.tar Manifest.%s",
 			      conf, manifest->version, conf, manifest->version, manifest->component,
 			      manifest->component);
 	}

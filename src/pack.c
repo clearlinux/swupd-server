@@ -24,18 +24,17 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
+#include <dirent.h>
+#include <errno.h>
+#include <glib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-
-#include <glib.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "swupd.h"
 
@@ -118,8 +117,7 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&tar, TAR_COMMAND " --directory=%s/%s/%i_to_%i/staged " TAR_WARN_ARGS " "
-			            TAR_PERM_ATTR_ARGS " -xf %s",
+		string_or_die(&tar, TAR_COMMAND " --directory=%s/%s/%i_to_%i/staged " TAR_WARN_ARGS " " TAR_PERM_ATTR_ARGS " -xf %s",
 			      packstage_dir, module, from_version, to_version, path);
 		ret = system(tar);
 		if (!ret) {
@@ -411,7 +409,6 @@ static int make_final_pack(struct packdata *pack)
 			create_manifest_delta(pack->from, pack->to, pack->module);
 		}
 
-
 		string_or_die(&to, "%s/%s/%i_to_%i/Manifest-%s-delta-from-%i", packstage_dir,
 			      pack->module, pack->from, pack->to, pack->module, pack->from);
 
@@ -452,7 +449,7 @@ static int make_final_pack(struct packdata *pack)
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
 	string_or_die(&tar, TAR_COMMAND " " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i_to_%i/ "
-		            "--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
+					"--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
 		      packstage_dir, pack->module, pack->from, pack->to, staging_dir, pack->to,
 		      pack->module, pack->from);
 	ret = system(tar);
