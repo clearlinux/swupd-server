@@ -168,21 +168,44 @@ static void make_pack_full_files(struct packdata *pack)
 		item = g_list_next(item);
 		if ((!file->peer || file->peer->is_deleted) && !file->is_deleted && !file->rename_peer) {
 			char *from, *to;
+			char *fullfrom, *fullto;
+
 			/* hardlink each file that is in <end> but not in <X> */
+			string_or_die(&fullfrom, "%s/%i/full/%s", image_dir, file->last_change, file->filename);
+			string_or_die(&fullto, "%s/%s/%i_to_%i/staged/%s", packstage_dir,
+				      pack->module, pack->from, pack->to, file->hash);
 			string_or_die(&from, "%s/%i/files/%s.tar", staging_dir, file->last_change, file->hash);
 			string_or_die(&to, "%s/%s/%i_to_%i/staged/%s.tar", packstage_dir,
 				      pack->module, pack->from, pack->to, file->hash);
-			ret = link(from, to);
-			if (ret) {
-				if (errno != EEXIST) {
-					LOG(NULL, "Failure to link", "%s to %s (%s) %i", from, to, strerror(errno), errno);
+
+			ret = -1;
+			errno = 0;
+
+			/* Prefer to hardlink uncompressed files (excluding
+			 * directories) first, and fall back to the compressed
+			 * versions if the hardlink fails.
+			 */
+			if (!file->is_dir) {
+				ret = link(fullfrom, fullto);
+				if (ret && errno != EEXIST) {
+					LOG(NULL, "Failure to link for fullfile pack", "%s to %s (%s) %i", fullfrom, fullto, strerror(errno), errno);
 				}
-			} else {
+			}
+			if (ret) {
+				ret = link(from, to);
+				if (ret && errno != EEXIST) {
+					LOG(NULL, "Failure to link for fullfile pack", "%s to %s (%s) %i", from, to, strerror(errno), errno);
+				}
+			}
+
+			if (ret == 0) {
 				pack->fullcount++;
 			}
 
 			free(from);
 			free(to);
+			free(fullfrom);
+			free(fullto);
 		}
 	}
 
@@ -321,7 +344,7 @@ static int make_final_pack(struct packdata *pack)
 	item = g_list_first(pack->end_manifest->files);
 
 	while (item) {
-		char *from, *to, *tarfrom, *tarto;
+		char *from, *to, *tarfrom, *tarto, *fullfrom, *fullto;
 		struct stat stat_delta, stat_tar;
 
 		file = item->data;
@@ -343,6 +366,9 @@ static int make_final_pack(struct packdata *pack)
 		string_or_die(&tarfrom, "%s/%i/files/%s.tar", staging_dir,
 			      file->last_change, file->hash);
 		string_or_die(&tarto, "%s/%s/%i_to_%i/staged/%s.tar", packstage_dir,
+			      pack->module, pack->from, pack->to, file->hash);
+		string_or_die(&fullfrom, "%s/%i/full/%s", image_dir, file->last_change, file->filename);
+		string_or_die(&fullto, "%s/%s/%i_to_%i/staged/%s", packstage_dir,
 			      pack->module, pack->from, pack->to, file->hash);
 
 		ret = stat(from, &stat_delta);
@@ -375,13 +401,28 @@ static int make_final_pack(struct packdata *pack)
 				}
 			}
 		} else {
-			/* include full file in pack */
-			ret = link(tarfrom, tarto);
-			if (ret) {
-				if (errno != EEXIST) {
-					LOG(NULL, "Failure to link", "%s to %s (%s) %i\n", tarfrom, tarto, strerror(errno), errno);
+			ret = -1;
+			errno = 0;
+
+			/* Prefer to hardlink uncompressed files (excluding
+			 * directories) first, and fall back to the compressed
+			 * versions if the hardlink fails.
+			 */
+			if (!file->is_dir) {
+				ret = link(fullfrom, fullto);
+				if (ret && errno != EEXIST) {
+					LOG(NULL, "Failure to link for final pack", "%s to %s (%s) %i\n", fullfrom, fullto, strerror(errno), errno);
 				}
-			} else {
+			}
+
+			if (ret) {
+				ret = link(tarfrom, tarto);
+				if (ret && errno != EEXIST) {
+					LOG(NULL, "Failure to link for final pack", "%s to %s (%s) %i\n", tarfrom, tarto, strerror(errno), errno);
+				}
+			}
+
+			if (ret == 0) {
 				pack->fullcount++;
 			}
 		}
@@ -390,6 +431,8 @@ static int make_final_pack(struct packdata *pack)
 		free(to);
 		free(tarfrom);
 		free(tarto);
+		free(fullfrom);
+		free(fullto);
 	}
 
 	if (pack->fullcount > 0) {
