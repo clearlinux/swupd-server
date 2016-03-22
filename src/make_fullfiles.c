@@ -113,6 +113,8 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	init_log("swupd-make-fullfiles", "", 0, version);
+
 	manifest = manifest_from_file(version, "full");
 	create_fullfiles(manifest);
 

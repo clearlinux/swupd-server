@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 	populate_dirs(newversion);
 
 	printf("Next version is %i \n", newversion);
-	init_log(newversion);
+	init_log("swupd-create-update", "", current_version, newversion);
 
 	gettimeofday(&previous_time, NULL);
 

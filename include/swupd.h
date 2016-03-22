@@ -222,7 +222,7 @@ extern void populate_file_struct(struct file *file, char *filename);
 extern void download_exta_base_content(void);
 
 extern char *get_elapsed_time(struct timeval *t1, struct timeval *t2);
-extern void init_log(int version);
+extern void init_log(const char *prefix, const char *bundle, int start, int end);
 extern void init_log_stdout(void);
 extern void close_log(int version, int exit_status);
 extern void __log_message(struct file *file, char *msg, char *filename, int linenr, const char *fmt, ...);

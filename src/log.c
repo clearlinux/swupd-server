@@ -38,11 +38,12 @@ static FILE *logfile;
 
 static struct timeval start_time;
 
-void init_log(int version)
+void init_log(const char *prefix, const char *bundle, int start, int end)
 {
-	char filename[4096];
-	sprintf(filename, "swupd-server.log.%i", version);
+	char *filename;
+	string_or_die(&filename, "%s%s-from-%i-to-%i.log", prefix, bundle, start, end);
 	logfile = fopen(filename, "w");
+	free(filename);
 	gettimeofday(&start_time, NULL);
 }
 void init_log_stdout(void)

@@ -116,10 +116,6 @@ int main(int argc, char **argv)
 	banner();
 	check_root();
 
-	/* FIXME: should use "end_version" not "0" and a unique filename
-	init_log(0);
-	*/
-
 	/* Initilize the crypto signature module */
 	if (!signature_initialize()) {
 		printf("Can't initialize the crypto signature module!\n");
@@ -140,6 +136,8 @@ int main(int argc, char **argv)
 		printf("Invalid version combination: %i - %li \n", start_version, end_version);
 		exit(EXIT_FAILURE);
 	}
+
+	init_log("swupd-make-pack-", module, start_version, end_version);
 
 	printf("Making pack-%s %i to %li\n", module, start_version, end_version);
 
