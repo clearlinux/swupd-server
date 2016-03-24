@@ -26,8 +26,6 @@ export PASSPHRASE="${SWUPD_CERTS_DIR}/passphrase"
 ${SWUPDREPO}/swupd_create_update --osversion ${VER} --statedir ${UPDATEDIR}
 ${SWUPDREPO}/swupd_make_fullfiles --statedir ${UPDATEDIR} ${VER}
 
-pushd ${SWUPDREPO}
-
 # create zero packs
 MOM=${UPDATEDIR}/www/${VER}/Manifest.MoM
 if [ ! -e ${MOM} ]; then
@@ -50,8 +48,6 @@ done
 # create delta packs for 2 versions back
 NUM_PACKS=2
 ${SWUPDREPO}/pack_maker.sh ${VER} ${NUM_PACKS}
-
-popd
 
 # expose the new build to staging / testing
 echo ${VER} > ${UPDATEDIR}/image/latest.version
