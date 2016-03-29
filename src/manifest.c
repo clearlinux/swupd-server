@@ -1067,7 +1067,7 @@ static void maximize_version_manifests(struct manifest *m1, struct manifest *m2)
 
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
-			if (file1->last_change > file2->last_change) {
+			if (!file1->is_deleted && file1->last_change > file2->last_change) {
 				LOG(file1, "Update", "Moving %s to version %i", file1->filename, file1->last_change);
 				file2->last_change = file1->last_change;
 			}
