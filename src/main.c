@@ -69,7 +69,7 @@ static void print_help(const char *name)
 	printf("Application Options:\n");
 	printf("   -o, --osversion         The OS version for which to create an update\n");
 	printf("   -m, --minversion        Optional minimum file version to write into manifests per file\n");
-	printf("   -F, --format            Optional format string [ default:=%d ]\n", SWUPD_DEFAULT_FORMAT);
+	printf("   -F, --format            Format number for the update\n");
 	printf("   -g, --getformat         Print current format string and exit\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
 	printf("   -s, --signcontent       Enables cryptographic signing of update content\n");
@@ -118,7 +118,7 @@ static bool parse_options(int argc, char **argv)
 			break;
 		case 'g':
 			if (format == -1) {
-				printf("%d\n", SWUPD_DEFAULT_FORMAT);
+				printf("No format specified\n");
 			} else {
 				printf("%d\n", format);
 				free_globals();
