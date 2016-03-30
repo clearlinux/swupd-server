@@ -416,15 +416,19 @@ int main(int argc, char **argv)
 		newm->prevversion = oldm->version;
 
 		/* add os-core as an included manifest */
-		oldm->includes = g_list_prepend(oldm->includes, old_core);
-		newm->includes = g_list_prepend(newm->includes, new_core);
+                if (!manifest_includes(oldm, "os-core")) {
+                        oldm->includes = g_list_prepend(oldm->includes, old_core);
+                }
+                if (!manifest_includes(newm, "os-core")) {
+                        newm->includes = g_list_prepend(newm->includes, new_core);
+                }
 
 		/* Step 5: Subtract the core files from the manifest */
 		subtract_manifests_frontend(oldm, oldm);
 		subtract_manifests_frontend(newm, newm);
 
 		/* Step 6: Compare manifest to the previous version... */
-		if (match_manifests(oldm, newm) == 0) {
+		if (match_manifests(oldm, newm) == 0 && !changed_includes(oldm, newm)) {
 			LOG(NULL, "", "%s components have not changed, no new manifest", group);
 			printf("%s components have not changed, no new manifest\n", group);
 			/* Step 6a: if nothing changed, stay at the old version */
@@ -436,7 +440,7 @@ int main(int argc, char **argv)
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
 			newfiles = prune_manifest(newm);
-			if (newfiles > 0) {
+			if (newfiles > 0 || changed_includes(oldm, newm)) {
 				LOG(NULL, "", "%s component has changes (%d), writing out new manifest", group, newfiles);
 				printf("%s component has changes (%d), writing out new manifest\n", group, newfiles);
 				if (write_manifest(newm) != 0) {
