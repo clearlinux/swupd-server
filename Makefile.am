@@ -110,6 +110,7 @@ TESTS = $(dist_check_SCRIPTS)
 dist_check_SCRIPTS = \
 	test/functional/basic.bats \
 	test/functional/delete-no-version-bump.bats \
+	test/functional/include-version-bump.bats \
 	test/functional/update.bats \
 	test/functional/fullfiles.bats \
 	test/functional/pack.bats \
