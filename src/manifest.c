@@ -877,6 +877,49 @@ void sort_manifest_by_version(struct manifest *manifest)
 	}
 }
 
+bool manifest_includes(struct manifest *manifest, char *component)
+{
+	GList *includes = g_list_first(manifest->includes);
+
+	while (includes) {
+		if (strcmp(((struct manifest *)includes->data)->component,
+			   component) == 0) {
+			return true;
+		}
+		includes = g_list_next(includes);
+	}
+
+	return false;
+}
+
+/* This requires the manifest to have the includes sorted.
+ * The manifests will be sorted when constructed from
+ * get_sub_manifest_includes (and then replacing the manifest
+ * strings with actual manifest structs in the same order as
+ * is done in the main.c's main()).
+bool changed_includes(struct manifest *old, struct manifest *new)
+{
+        GList *includes_old = g_list_first(old->includes);
+        GList *includes_new = g_list_first(new->includes);
+
+        if (g_list_length(includes_old) != g_list_length(includes_new)) {
+                return true;
+        }
+
+        while (includes_old && includes_new) {
+                char *bundle_old = ((struct manifest *)includes_old->data)->component;
+                char *bundle_new = ((struct manifest *)includes_new->data)->component;
+                if (strcmp(bundle_old, bundle_new) != 0) {
+                        return true;
+                }
+
+                includes_old = g_list_next(includes_old);
+                includes_new = g_list_next(includes_new);
+        }
+
+        return false;
+}
+
 /* Conditionally remove some things from a manifest.
  * Returns > 0 when the pruned manifest has new files.
  * Returns 0 when the pruned manifest no longer has new files.
