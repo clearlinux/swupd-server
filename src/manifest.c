@@ -112,6 +112,7 @@ struct manifest *manifest_from_file(int version, char *component)
 	struct manifest *manifest;
 	char *filename, *conf;
 	int previous = 0;
+	int format_number;
 
 	conf = config_output_dir();
 	if (conf == NULL) {
@@ -143,7 +144,9 @@ struct manifest *manifest_from_file(int version, char *component)
 		return NULL;
 	}
 	c = &line[9];
-	if (strtoull(c, NULL, 10) == 0) {
+	format_number = strtoull(c, NULL, 10);
+	if ((errno < 0) || (format_number <= 0)) {
+		//format string shall be a positive integer
 		printf("Unknown file format version in MANIFEST line: %s\n", c);
 		fclose(infile);
 		return NULL;
@@ -186,6 +189,7 @@ struct manifest *manifest_from_file(int version, char *component)
 	}
 
 	manifest = alloc_manifest(version, component);
+	manifest->format = format_number;
 	manifest->prevversion = previous;
 	manifest->includes = includes;
 
@@ -333,6 +337,7 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	int must_sort = 0;
 	int count = 0;
 	int first = 1;
+	bool drop_deleted;
 
 	if (!m1) {
 		printf("Matching manifests up failed: No old manifest!\n");
@@ -342,6 +347,14 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	if (!m2) {
 		printf("Matching manifests up failed: No new manifest!\n");
 		return -1;
+	}
+
+	/* if format incremented, we don't need to include in m2 a file
+	 * which was already showing deleted in m1 */
+	if (m1->format < m2->format) {
+		drop_deleted = true;
+	} else {
+		drop_deleted = false;
 	}
 
 	m1->files = g_list_sort(m1->files, file_sort_filename);
@@ -360,6 +373,15 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
+			if (file1->is_deleted && file2->is_deleted && drop_deleted) {
+				GList *to_delete = list2;
+				list1 = g_list_next(list1);
+				list2 = g_list_next(list2);
+				m2->files = g_list_delete_link(m2->files, to_delete);
+				m2->count--;
+				continue;
+			}
+
 			if (file1->is_deleted && file2->is_deleted && file1->is_rename) {
 				file2->is_rename = file1->is_rename;
 				hash_assign(file1->hash, file2->hash);
@@ -747,7 +769,7 @@ static int write_manifest_plain(struct manifest *manifest)
 		goto exit;
 	}
 
-	fprintf(out, "MANIFEST\t%s\n", format_string);
+	fprintf(out, "MANIFEST\t%d\n", format);
 	fprintf(out, "version:\t%i\n", manifest->version);
 	fprintf(out, "previous:\t%i\n", manifest->prevversion);
 	fprintf(out, "filecount:\t%i\n", manifest->count);

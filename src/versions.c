@@ -139,7 +139,7 @@ void write_cookiecrumbs_to_download_area(int version)
 	}
 	free(cmd);
 
-	string_or_die(&cmd, "echo %s > %s/%i/format", format_string, conf, version);
+	string_or_die(&cmd, "echo %d > %s/%i/format", format, conf, version);
 	if (system(cmd) != 0) {
 		assert(0);
 	}

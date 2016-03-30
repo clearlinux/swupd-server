@@ -61,6 +61,7 @@
 #endif
 
 struct manifest {
+	int format;
 	int version;
 	int prevversion;
 	char *component;
@@ -136,7 +137,7 @@ struct packdata {
 extern int current_version;
 extern int newversion;
 extern int minversion;
-extern char *format_string;
+extern int format;
 extern bool enable_signing;
 
 extern char *state_dir;
@@ -146,7 +147,7 @@ extern char *staging_dir;
 
 extern bool init_globals(void);
 extern void free_globals(void);
-extern bool set_format_string(char *);
+extern bool set_format(char *);
 extern void check_root(void);
 extern bool set_state_dir(char *);
 extern bool init_state_globals(void);
