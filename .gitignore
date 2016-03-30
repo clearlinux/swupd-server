@@ -19,10 +19,8 @@ stamp-h1
 DEADJOE
 swupd_create_update
 swupd_make_pack
-swupd-update-server.log*
 swupd_make_fullfiles
 swupd-server-*.tar.gz
-swupd-server.log.*
 cscope.*
 *.kdev4
 coverage/
@@ -31,4 +29,5 @@ src/*.gcda
 tap-driver.sh
 test/functional/*.log
 test/functional/*.trs
+swupd-*.log
 test-suite.log
