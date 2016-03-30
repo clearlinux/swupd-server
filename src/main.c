@@ -105,7 +105,7 @@ static bool parse_options(int argc, char **argv)
 			}
 			break;
 		case 'F':
-			if (!optarg || !set_format_string(optarg)) {
+			if (!optarg || !set_format(optarg)) {
 				printf("Invalid --format argument\n\n");
 				return false;
 			}
@@ -117,10 +117,10 @@ static bool parse_options(int argc, char **argv)
 			}
 			break;
 		case 'g':
-			if (format_string == NULL) {
+			if (format == -1) {
 				printf("%d\n", SWUPD_DEFAULT_FORMAT);
 			} else {
-				printf("%s\n", format_string);
+				printf("%llu\n", format);
 				free_globals();
 			}
 			exit(0);
