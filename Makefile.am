@@ -23,6 +23,7 @@ swupd_create_update_SOURCES = \
 	src/helpers.c \
 	src/heuristics.c \
 	src/log.c \
+	src/in_memory_archive.c \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
@@ -56,6 +57,7 @@ swupd_make_fullfiles_SOURCES = \
 	src/globals.c \
 	src/groups.c \
 	src/helpers.c \
+	src/in_memory_archive.c \
 	src/log.c \
 	src/make_fullfiles.c \
 	src/manifest.c \
@@ -65,12 +67,13 @@ swupd_make_fullfiles_SOURCES = \
 	src/stats.c \
 	src/xattrs.c
 
-AM_CPPFLAGS = $(glib_CFLAGS) -I$(top_srcdir)/include
+AM_CPPFLAGS = $(glib_CFLAGS) $(libarchive_CFLAGS) -I$(top_srcdir)/include
 
 swupd_create_update_LDADD = \
 	$(glib_LIBS) \
 	$(zlib_LIBS) \
 	$(openssl_LIBS) \
+	$(libarchive_LIBS) \
 	$(bsdiff_LIBS)
 
 swupd_make_pack_LDADD = \
@@ -83,6 +86,7 @@ swupd_make_fullfiles_LDADD = \
 	$(glib_LIBS) \
 	$(zlib_LIBS) \
 	$(openssl_LIBS) \
+	$(libarchive_LIBS) \
 	$(bsdiff_LIBS)
 
 if ENABLE_LZMA

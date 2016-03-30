@@ -22,6 +22,8 @@
  */
 
 #define _GNU_SOURCE
+#include <archive.h>
+#include <archive_entry.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -33,24 +35,27 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include "swupd.h"
+#include "libarchive_helper.h"
 
 /* output must be a file, which is a (compressed) tar file, of the file denoted by "file", without any of its
    directory paths etc etc */
 static void create_fullfile(struct file *file)
 {
-	char *origin;
+	char *origin = NULL;
 	char *tarname = NULL;
-	char *rename_source = NULL;
-	char *rename_target = NULL;
-	char *rename_tmpdir = NULL;
-	int ret;
 	struct stat sbuf;
 	char *empty, *indir, *outdir;
-	char *param1, *param2;
-	int stderrfd;
+	struct archive_entry *entry = NULL;
+	struct archive *from = NULL, *to = NULL;
+	struct in_memory_archive best = { .buffer = NULL };
+	struct in_memory_archive current = { .buffer = NULL };
+	uint8_t *file_content = NULL;
+	size_t file_size;
+	int fd = -1;
 
 	if (file->is_deleted) {
 		return; /* file got deleted -> by definition we cannot tar it up */
@@ -59,15 +64,17 @@ static void create_fullfile(struct file *file)
 	empty = config_empty_dir();
 	indir = config_image_base();
 	outdir = config_output_dir();
+	entry = archive_entry_new();
+	assert(entry);
+	from = archive_read_disk_new();
+	assert(from);
 
 	string_or_die(&tarname, "%s/%i/files/%s.tar", outdir, file->last_change, file->hash);
 	if (access(tarname, R_OK) == 0) {
 		/* output file already exists...done */
-		free(tarname);
+		goto done;
 		return;
 	}
-	free(tarname);
-	//printf("%s was missing\n", file->hash);
 
 	string_or_die(&origin, "%s/%i/full/%s", indir, file->last_change, file->filename);
 	if (lstat(origin, &sbuf) < 0) {
@@ -76,156 +83,197 @@ static void create_fullfile(struct file *file)
 		assert(0);
 	}
 
-	if (file->is_dir) { /* directories are easy */
-		char *tmp1, *tmp2, *dir, *base;
+	/* step 1: tar it with each compression type  */
+	typedef int (*filter_t)(struct archive *);
+	static const filter_t compression_filters[] = {
+		/*
+		 * Start with the compression method that is most likely (*) to produce
+		 * the best result. That will allow aborting creation of archives earlier
+		 * when they become larger than the currently smallest archive.
+		 *
+		 * (*) statistics for ostro-image-swupd:
+		 *     43682 LZMA
+		 *     13398 gzip
+		 *       844 bzip2
+		 */
+		archive_write_add_filter_lzma,
+		archive_write_add_filter_gzip,
+		archive_write_add_filter_bzip2,
+		/*
+		 * TODO (?): can archive_write_add_filter_none ever be better than compressing?
+		 */
+		NULL
+	};
+	file_size = S_ISREG(sbuf.st_mode) ? sbuf.st_size : 0;
 
-		tmp1 = strdup(origin);
-		assert(tmp1);
-		base = basename(tmp1);
-
-		tmp2 = strdup(origin);
-		assert(tmp2);
-		dir = dirname(tmp2);
-
-		string_or_die(&rename_tmpdir, "%s/XXXXXX", outdir);
-		if (!mkdtemp(rename_tmpdir)) {
-			LOG(NULL, "Failed to create temporary directory for %s move", origin);
+	archive_entry_copy_sourcepath(entry, origin);
+	if (archive_read_disk_entry_from_file(from, entry, -1, &sbuf)) {
+		LOG(NULL, "Getting directory attributes failed", "%s: %s",
+		    origin, archive_error_string(from));
+		assert(0);
+	}
+	archive_entry_copy_pathname(entry, file->hash);
+	if (file_size) {
+		file_content = malloc(file_size);
+		if (!file_content) {
+			LOG(NULL, "out of memory", "");
 			assert(0);
 		}
-
-		string_or_die(&param1, "--exclude=%s/?*", base);
-		string_or_die(&param2, "./%s", base);
-		char *const tarcfcmd[] = { TAR_COMMAND, "-C", dir, TAR_PERM_ATTR_ARGS_STRLIST, "-cf", "-", param1, param2, NULL };
-		char *const tarxfcmd[] = { TAR_COMMAND, "-C", rename_tmpdir, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", "-", NULL };
-
-		stderrfd = open("/dev/null", O_WRONLY);
-		if (stderrfd == -1) {
-			LOG(NULL, "Failed to open /dev/null", "");
+		fd = open(origin, O_RDONLY);
+		if (fd == -1) {
+			LOG(NULL, "Failed to open file", "%s: %s",
+			    origin, strerror(errno));
 			assert(0);
 		}
-		if (system_argv_pipe(tarcfcmd, -1, stderrfd, tarxfcmd, -1, stderrfd) != 0) {
-			assert(0);
-		}
-		free(param1);
-		free(param2);
-		close(stderrfd);
-
-		string_or_die(&rename_source, "%s/%s", rename_tmpdir, base);
-		string_or_die(&rename_target, "%s/%s", rename_tmpdir, file->hash);
-		if (rename(rename_source, rename_target)) {
-			LOG(NULL, "rename failed for %s to %s", rename_source, rename_target);
-			assert(0);
-		}
-		free(rename_source);
-
-		/* for a directory file, tar up simply with gzip */
-		string_or_die(&param1, "%s/%i/files/%s.tar", outdir, file->last_change, file->hash);
-		char *const tarcmd[] = { TAR_COMMAND, "-C", rename_tmpdir, TAR_PERM_ATTR_ARGS_STRLIST, "-zcf", param1, file->hash, NULL };
-
-		if (system_argv(tarcmd) != 0) {
-			assert(0);
-		}
-		free(param1);
-
-		if (rmdir(rename_target)) {
-			LOG(NULL, "rmdir failed for %s", rename_target);
-		}
-		free(rename_target);
-		if (rmdir(rename_tmpdir)) {
-			LOG(NULL, "rmdir failed for %s", rename_tmpdir);
-		}
-		free(rename_tmpdir);
-
-		free(tmp1);
-		free(tmp2);
-	} else { /* files are more complex */
-		char *gzfile = NULL, *bzfile = NULL, *xzfile = NULL;
-		char *tempfile;
-		uint64_t gz_size = LONG_MAX, bz_size = LONG_MAX, xz_size = LONG_MAX;
-
-		/* step 1: hardlink the guy to an empty directory with the hash as the filename */
-		string_or_die(&tempfile, "%s/%s", empty, file->hash);
-		if (link(origin, tempfile) < 0) {
-			LOG(NULL, "hardlink failed", "%s due to %s (%s -> %s)", file->filename, strerror(errno), origin, tempfile);
-			char *const argv[] = { "cp", "-a", origin, tempfile, NULL };
-			if (system_argv(argv) != 0) {
+		size_t done = 0;
+		while (done < file_size) {
+			ssize_t curr;
+			curr = read(fd, file_content + done, file_size - done);
+			if (curr == -1) {
+				LOG(NULL, "Failed to read from file", "%s: %s",
+				    origin, strerror(errno));
 				assert(0);
 			}
+			done += curr;
 		}
-
-		/* step 2a: tar it with each compression type  */
-		// lzma
-		string_or_die(&param1, "--directory=%s", empty);
-		string_or_die(&param2, "%s/%i/files/%s.tar.xz", outdir, file->last_change, file->hash);
-		char *const tarlzmacmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf", param2, file->hash, NULL };
-
-		if (system_argv(tarlzmacmd) != 0) {
-			assert(0);
-		}
-		free(param1);
-		free(param2);
-
-		// gzip
-		string_or_die(&param1, "--directory=%s", empty);
-		string_or_die(&param2, "%s/%i/files/%s.tar.gz", outdir, file->last_change, file->hash);
-		char *const targzipcmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-zcf", param2, file->hash, NULL };
-
-		if (system_argv(targzipcmd) != 0) {
-			assert(0);
-		}
-		free(param1);
-		free(param2);
-
-#ifdef SWUPD_WITH_BZIP2
-		string_or_die(&param1, "--directory=%s", empty);
-		string_or_die(&param2, "%s/%i/files/%s.tar.bz2", outdir, file->last_change, file->hash);
-		char *const tarbzip2cmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-jcf", param2, file->hash, NULL };
-
-		if (system_argv(tarbzip2cmd) != 0) {
-			assert(0);
-		}
-		free(param1);
-		free(param2);
-
-#endif
-
-		/* step 2b: pick the smallest of the three compression formats */
-		string_or_die(&gzfile, "%s/%i/files/%s.tar.gz", outdir, file->last_change, file->hash);
-		if (stat(gzfile, &sbuf) == 0) {
-			gz_size = sbuf.st_size;
-		}
-		string_or_die(&bzfile, "%s/%i/files/%s.tar.bz2", outdir, file->last_change, file->hash);
-		if (stat(bzfile, &sbuf) == 0) {
-			bz_size = sbuf.st_size;
-		}
-		string_or_die(&xzfile, "%s/%i/files/%s.tar.xz", outdir, file->last_change, file->hash);
-		if (stat(xzfile, &sbuf) == 0) {
-			xz_size = sbuf.st_size;
-		}
-		string_or_die(&tarname, "%s/%i/files/%s.tar", outdir, file->last_change, file->hash);
-		if (gz_size <= xz_size && gz_size <= bz_size) {
-			ret = rename(gzfile, tarname);
-		} else if (xz_size <= bz_size) {
-			ret = rename(xzfile, tarname);
-		} else {
-			ret = rename(bzfile, tarname);
-		}
-		if (ret != 0) {
-			LOG(file, "post-tar rename failed", "ret=%d", ret);
-		}
-		unlink(bzfile);
-		unlink(xzfile);
-		unlink(gzfile);
-		free(bzfile);
-		free(xzfile);
-		free(gzfile);
-		free(tarname);
-
-		/* step 3: remove the hardlink */
-		unlink(tempfile);
-		free(tempfile);
+		close(fd);
+		fd = -1;
 	}
 
+	for (int i = 0; compression_filters[i]; i++) {
+		/* Need to re-initialize the archive handle, it cannot be re-used. */
+		if (to) {
+			archive_write_free(to);
+		}
+		/*
+		 * Use the recommended restricted pax interchange
+		 * format. Numeric uid/gid values are stored in the archive
+		 * (no uid/gid lookup enabled) because symbolic names can lead
+		 * to a hash mismatch during unpacking when /etc/passwd or
+		 * /etc/group change during an update (see
+		 * https://github.com/clearlinux/swupd-client/issues/101).
+		 *
+		 * Filenames read from the file system are expected to be
+		 * valid according to the current locale. archive_write_header()
+		 * will warn about filenames that it cannot properly decode
+		 * and proceeds by writing the raw bytes, but we treat this an
+		 * error by not distinguishing between ARCHIVE_FATAL
+		 * and ARCHIVE_WARN.
+		 *
+		 * When we fail with "Can't translate" errors, make sure that
+		 * LANG and/or LC_ env variables are set.
+		 */
+		to = archive_write_new();
+		assert(to);
+		if (archive_write_set_format_pax_restricted(to)) {
+			LOG(NULL, "PAX format", "%s", archive_error_string(to));
+			assert(0);
+		}
+		do {
+			/* Try compression methods until we find one which is supported. */
+			if (!compression_filters[i](to)) {
+				break;
+			}
+		} while(compression_filters[++i]);
+		/*
+		 * Regardless of the block size below, never pad the
+		 * last block, it just makes the archive larger.
+		 */
+		if (archive_write_set_bytes_in_last_block(to, 1)) {
+			LOG(NULL, "Removing padding failed", "");
+			assert(0);
+		}
+		/*
+		 * Invoke in_memory_write() as often as possible and check each
+		 * time whether we are already larger than the currently best
+		 * algorithm.
+		 */
+		current.maxsize = best.used;
+		if (archive_write_set_bytes_per_block(to, 0)) {
+			LOG(NULL, "Removing blocking failed", "");
+			assert(0);
+		}
+		/*
+		 * We can make an educated guess how large the resulting archive will be.
+		 * Avoids realloc() calls when the file is big.
+		 */
+		if (!current.allocated) {
+			current.allocated = file_size + 4096;
+			current.buffer = malloc(current.allocated);
+		}
+		if (!current.buffer) {
+			LOG(NULL, "out of memory", "");
+			assert(0);
+		}
+		if (archive_write_open(to, &current, NULL, in_memory_write, NULL)) {
+			LOG(NULL, "Failed to create archive", "%s",
+			    archive_error_string(to));
+			assert(0);
+		}
+		if (archive_write_header(to, entry) ||
+		    file_content && archive_write_data(to, file_content, file_size) != (ssize_t)file_size ||
+		    archive_write_close(to)) {
+			if (current.maxsize && current.used >= current.maxsize) {
+				archive_write_free(to);
+				to = NULL;
+				continue;
+			}
+			LOG(NULL, "Failed to store file in archive", "%s: %s",
+			    origin, archive_error_string(to));
+			assert(0);
+		}
+		if (!best.used || current.used < best.used) {
+			free(best.buffer);
+			best = current;
+			memset(&current, 0, sizeof(current));
+		} else {
+			/* Simply re-use the buffer for the next iteration. */
+			current.used = 0;
+		}
+	}
+	if (!best.used) {
+		LOG(NULL, "creating archive failed with all compression methods", "");
+		assert(0);
+	}
+
+	/* step 2: write out to disk. Archives are immutable and thus read-only. */
+	fd = open(tarname, O_CREAT|O_WRONLY, S_IRUSR|S_IRGRP|S_IROTH);
+	if (fd <= 0) {
+		LOG(NULL, "Failed to create archive", "%s: %s",
+		    tarname, strerror(errno));
+		assert(0);
+	}
+	size_t done = 0;
+	while (done < best.used) {
+		ssize_t curr;
+		curr = write(fd, best.buffer + done, best.used - done);
+		if (curr == -1) {
+			LOG(NULL, "Failed to write archive", "%s: %s",
+			    tarname, strerror(errno));
+			assert(0);
+		}
+		done += curr;
+	}
+	if (close(fd)) {
+		LOG(NULL, "Failed to complete writing archive", "%s: %s",
+		    tarname, strerror(errno));
+		assert(0);
+	}
+	fd = -1;
+	free(best.buffer);
+	free(current.buffer);
+	free(file_content);
+
+ done:
+	if (fd >= 0) {
+		close(fd);
+	}
+	archive_read_free(from);
+	if (to) {
+		archive_write_free(to);
+	}
+	archive_entry_free(entry);
+	free(tarname);
 	free(indir);
 	free(outdir);
 	free(empty);
