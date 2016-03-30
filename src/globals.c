@@ -79,7 +79,8 @@ bool set_state_dir(char *dir)
 bool init_globals(void)
 {
 	if (format == -1) {
-		format = SWUPD_DEFAULT_FORMAT;
+		printf("Error: Missing format parameter. Please specify a format with -F.\n");
+		return false;
 	}
 
 	if (!init_state_globals()) {

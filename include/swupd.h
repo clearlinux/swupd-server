@@ -13,7 +13,6 @@
 // SWUPD_NUM_PACKS is also "PREV_CHECK" in releas tool swupd_bb.py (change both)
 #define SWUPD_NUM_PACKS 4
 #define SWUPD_NUM_MANIFEST_DELTAS 25
-#define SWUPD_DEFAULT_FORMAT 3
 
 #define SWUPD_SERVER_STATE_DIR "/var/lib/update"
 
