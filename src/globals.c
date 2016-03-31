@@ -33,7 +33,7 @@
 
 int newversion = -1;
 int minversion = 0;
-char *format_string = NULL;
+unsigned long long int format = 0;
 bool enable_signing = false;
 
 char *state_dir = NULL;
@@ -41,20 +41,17 @@ char *packstage_dir = NULL;
 char *image_dir = NULL;
 char *staging_dir = NULL;
 
-bool set_format_string(char *userinput)
+bool set_format(char *userinput)
 {
-	int version;
+	unsigned long long int user_format;
 
-	// expect a positive integer
+	// format string shall be a positive integer
 	errno = 0;
-	version = strtoull(userinput, NULL, 10);
-	if ((errno < 0) || (version <= 0)) {
+	user_format = strtoull(userinput, NULL, 10);
+	if ((errno < 0) || (user_format == 0)) {
 		return false;
 	}
-	if (format_string) {
-		free(format_string);
-	}
-	string_or_die(&format_string, "%d", version);
+	format = user_format;
 
 	return true;
 }
@@ -81,8 +78,9 @@ bool set_state_dir(char *dir)
 
 bool init_globals(void)
 {
-	if (format_string == NULL) {
-		string_or_die(&format_string, "%d", SWUPD_DEFAULT_FORMAT);
+	if (format == 0) {
+		printf("Error: Missing format parameter. Please specify a format with -F.\n");
+		return false;
 	}
 
 	if (!init_state_globals()) {
@@ -101,7 +99,6 @@ bool init_globals(void)
 
 void free_globals(void)
 {
-	free(format_string);
 	free(state_dir);
 	free(packstage_dir);
 	free(image_dir);

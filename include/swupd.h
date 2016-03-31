@@ -13,7 +13,6 @@
 // SWUPD_NUM_PACKS is also "PREV_CHECK" in releas tool swupd_bb.py (change both)
 #define SWUPD_NUM_PACKS 4
 #define SWUPD_NUM_MANIFEST_DELTAS 25
-#define SWUPD_DEFAULT_FORMAT 3
 
 #define SWUPD_SERVER_STATE_DIR "/var/lib/update"
 
@@ -61,6 +60,7 @@
 #endif
 
 struct manifest {
+	unsigned long long int format;
 	int version;
 	int prevversion;
 	char *component;
@@ -136,7 +136,7 @@ struct packdata {
 extern int current_version;
 extern int newversion;
 extern int minversion;
-extern char *format_string;
+extern unsigned long long int format;
 extern bool enable_signing;
 
 extern char *state_dir;
@@ -146,7 +146,7 @@ extern char *staging_dir;
 
 extern bool init_globals(void);
 extern void free_globals(void);
-extern bool set_format_string(char *);
+extern bool set_format(char *);
 extern void check_root(void);
 extern bool set_state_dir(char *);
 extern bool init_state_globals(void);
