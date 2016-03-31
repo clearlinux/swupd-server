@@ -897,27 +897,28 @@ bool manifest_includes(struct manifest *manifest, char *component)
  * get_sub_manifest_includes (and then replacing the manifest
  * strings with actual manifest structs in the same order as
  * is done in the main.c's main()).
+ */
 bool changed_includes(struct manifest *old, struct manifest *new)
 {
-        GList *includes_old = g_list_first(old->includes);
-        GList *includes_new = g_list_first(new->includes);
+	GList *includes_old = g_list_first(old->includes);
+	GList *includes_new = g_list_first(new->includes);
 
-        if (g_list_length(includes_old) != g_list_length(includes_new)) {
-                return true;
-        }
+	if (g_list_length(includes_old) != g_list_length(includes_new)) {
+		return true;
+	}
 
-        while (includes_old && includes_new) {
-                char *bundle_old = ((struct manifest *)includes_old->data)->component;
-                char *bundle_new = ((struct manifest *)includes_new->data)->component;
-                if (strcmp(bundle_old, bundle_new) != 0) {
-                        return true;
-                }
+	while (includes_old && includes_new) {
+		char *bundle_old = ((struct manifest *)includes_old->data)->component;
+		char *bundle_new = ((struct manifest *)includes_new->data)->component;
+		if (strcmp(bundle_old, bundle_new) != 0) {
+			return true;
+		}
 
-                includes_old = g_list_next(includes_old);
-                includes_new = g_list_next(includes_new);
-        }
+		includes_old = g_list_next(includes_old);
+		includes_new = g_list_next(includes_new);
+	}
 
-        return false;
+	return false;
 }
 
 /* Conditionally remove some things from a manifest.
