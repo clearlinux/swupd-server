@@ -769,7 +769,7 @@ static int write_manifest_plain(struct manifest *manifest)
 		goto exit;
 	}
 
-	fprintf(out, "MANIFEST\t%d\n", format);
+	fprintf(out, "MANIFEST\t%llu\n", format);
 	fprintf(out, "version:\t%i\n", manifest->version);
 	fprintf(out, "previous:\t%i\n", manifest->prevversion);
 	fprintf(out, "filecount:\t%i\n", manifest->count);

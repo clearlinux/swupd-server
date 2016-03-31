@@ -60,7 +60,7 @@
 #endif
 
 struct manifest {
-	int format;
+	unsigned long long int format;
 	int version;
 	int prevversion;
 	char *component;
@@ -136,7 +136,7 @@ struct packdata {
 extern int current_version;
 extern int newversion;
 extern int minversion;
-extern int format;
+extern unsigned long long int format;
 extern bool enable_signing;
 
 extern char *state_dir;

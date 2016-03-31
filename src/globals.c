@@ -33,7 +33,7 @@
 
 int newversion = -1;
 int minversion = 0;
-int format = -1;
+unsigned long long int format = 0;
 bool enable_signing = false;
 
 char *state_dir = NULL;
@@ -43,12 +43,12 @@ char *staging_dir = NULL;
 
 bool set_format(char *userinput)
 {
-	int user_format;
+	unsigned long long int user_format;
 
 	// format string shall be a positive integer
 	errno = 0;
 	user_format = strtoull(userinput, NULL, 10);
-	if ((errno < 0) || (user_format <= 0)) {
+	if ((errno < 0) || (user_format == 0)) {
 		return false;
 	}
 	format = user_format;
@@ -78,7 +78,7 @@ bool set_state_dir(char *dir)
 
 bool init_globals(void)
 {
-	if (format == -1) {
+	if (format == 0) {
 		printf("Error: Missing format parameter. Please specify a format with -F.\n");
 		return false;
 	}

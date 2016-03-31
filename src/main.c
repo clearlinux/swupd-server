@@ -117,10 +117,10 @@ static bool parse_options(int argc, char **argv)
 			}
 			break;
 		case 'g':
-			if (format == -1) {
+			if (format == 0) {
 				printf("No format specified\n");
 			} else {
-				printf("%d\n", format);
+				printf("%llu\n", format);
 				free_globals();
 			}
 			exit(0);
