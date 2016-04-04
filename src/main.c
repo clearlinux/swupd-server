@@ -117,7 +117,7 @@ static bool parse_options(int argc, char **argv)
 			}
 			break;
 		case 'g':
-			if (format == -1) {
+			if (format == 0) {
 				printf("No format specified\n");
 			} else {
 				printf("%llu\n", format);

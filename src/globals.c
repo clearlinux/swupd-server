@@ -78,7 +78,7 @@ bool set_state_dir(char *dir)
 
 bool init_globals(void)
 {
-	if (format == -1) {
+	if (format == 0) {
 		printf("Error: Missing format parameter. Please specify a format with -F.\n");
 		return false;
 	}
