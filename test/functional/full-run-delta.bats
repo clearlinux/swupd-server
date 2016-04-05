@@ -37,7 +37,7 @@ setup() {
 
 @test "full run update creation with delta packs" {
   # build the first version
-  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR
+  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR --format 3
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle
@@ -45,7 +45,7 @@ setup() {
   set_latest_ver 10
 
   # then the second version...
-  sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR
+  sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR --format 3
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 20
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 test-bundle

@@ -20,7 +20,7 @@ setup() {
 }
 
 @test "full run update creation" {
-  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR
+  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR --format 3
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
   sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle

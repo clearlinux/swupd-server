@@ -32,12 +32,12 @@ setup() {
 }
 
 @test "delete no version bump update creation" {
-  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR
+  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR --format 3
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
 
   set_latest_ver 10
 
-  sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR
+  sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR --format 3
   sudo $srcdir/swupd_make_fullfiles --statedir $DIR 20
 
   [ 1 -eq $(grep '10	/foo' $DIR/www/10/Manifest.full | wc -l) ]

@@ -1,13 +1,19 @@
 #!/usr/bin/env bats
 
-@test "create_update required arg" {
+@test "create_update required format" {
   run $srcdir/swupd_create_update
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "Missing format parameter" ]]
+}
+
+@test "create_update required version" {
+  run $srcdir/swupd_create_update -F 3
   [ "$status" -eq 1 ]
   [[ "$output" =~ "Missing version parameter:" ]]
 }
 
 @test "create_update root priv check" {
-  run $srcdir/swupd_create_update -o 10
+  run $srcdir/swupd_create_update -F 3 -o 10
   [ "$status" -eq 1 ]
   [[ "$output" =~ "not being run as root.. exiting" ]]
 }
