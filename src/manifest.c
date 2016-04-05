@@ -112,7 +112,7 @@ struct manifest *manifest_from_file(int version, char *component)
 	struct manifest *manifest;
 	char *filename, *conf;
 	int previous = 0;
-	int format_number;
+	unsigned long long int format_number;
 
 	conf = config_output_dir();
 	if (conf == NULL) {
@@ -145,7 +145,7 @@ struct manifest *manifest_from_file(int version, char *component)
 	}
 	c = &line[9];
 	format_number = strtoull(c, NULL, 10);
-	if ((errno < 0) || (format_number <= 0)) {
+	if ((errno < 0) || (format_number == 0)) {
 		//format string shall be a positive integer
 		printf("Unknown file format version in MANIFEST line: %s\n", c);
 		fclose(infile);
