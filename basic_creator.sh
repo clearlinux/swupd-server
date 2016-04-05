@@ -23,7 +23,7 @@ export LEAF_CERT="leaf.cert.pem"
 export CA_CHAIN_CERT="ca-chain.cert.pem"
 export PASSPHRASE="${SWUPD_CERTS_DIR}/passphrase"
 
-${SWUPDREPO}/swupd_create_update --osversion ${VER} --statedir ${UPDATEDIR}
+${SWUPDREPO}/swupd_create_update --osversion ${VER} --statedir ${UPDATEDIR} --format 3
 ${SWUPDREPO}/swupd_make_fullfiles --statedir ${UPDATEDIR} ${VER}
 
 # create zero packs
