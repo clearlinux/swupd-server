@@ -338,7 +338,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	int must_sort = 0;
 	int count = 0;
 	int first = 1;
-	bool drop_deleted;
 
 	if (!m1) {
 		printf("Matching manifests up failed: No old manifest!\n");
@@ -348,14 +347,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	if (!m2) {
 		printf("Matching manifests up failed: No new manifest!\n");
 		return -1;
-	}
-
-	/* if format incremented, we don't need to include in m2 a file
-	 * which was already showing deleted in m1 */
-	if (m1->format < m2->format) {
-		drop_deleted = true;
-	} else {
-		drop_deleted = false;
 	}
 
 	m1->files = g_list_sort(m1->files, file_sort_filename);
@@ -374,15 +365,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
-			if (file1->is_deleted && file2->is_deleted && drop_deleted) {
-				GList *to_delete = list2;
-				list1 = g_list_next(list1);
-				list2 = g_list_next(list2);
-				m2->files = g_list_delete_link(m2->files, to_delete);
-				m2->count--;
-				continue;
-			}
-
 			if (file1->is_deleted && file2->is_deleted && file1->is_rename) {
 				file2->is_rename = file1->is_rename;
 				hash_assign(file1->hash, file2->hash);
@@ -942,6 +924,71 @@ bool changed_includes(struct manifest *old, struct manifest *new)
 	}
 
 	return false;
+}
+
+/* For a format bump, it's convenient to remove deleted files from manifests
+ * that last changed prior to the format bump, since they are no longer
+ * considered for deletion as part of an update.
+ *
+ * Note: this function should be called after match_manifests().
+ */
+int remove_old_deleted_files(struct manifest *m1, struct manifest *m2)
+{
+	GList *list1, *list2;
+	struct file *file1, *file2;
+	int count = 0;
+
+	if (!m1) {
+		printf("No old manifest!\n");
+		return -1;
+	}
+
+	if (!m2) {
+		printf("No new manifest!\n");
+		return -1;
+	}
+
+	/* This is the common case, so bail early, reporting no deletions */
+	if (m1->format == m2->format) {
+		return 0;
+	}
+
+	/* At this point, the manifest formats mismatch, and it's assumed that
+	 * m1 is the old manifest, and m2 is the new.
+	 */
+
+	m1->files = g_list_sort(m1->files, file_sort_filename);
+	m2->files = g_list_sort(m2->files, file_sort_filename);
+
+	list1 = g_list_first(m1->files);
+	list2 = g_list_first(m2->files);
+
+	while (list1 && list2) {
+		int ret;
+		file1 = list1->data;
+		file2 = list2->data;
+
+		ret = strcmp(file1->filename, file2->filename);
+		if (ret == 0) {
+			if (file1->is_deleted && file2->is_deleted) {
+				GList *to_delete = list2;
+				list1 = g_list_next(list1);
+				list2 = g_list_next(list2);
+				m2->files = g_list_delete_link(m2->files, to_delete);
+				m2->count--;
+				count++;
+				continue;
+			}
+			list1 = g_list_next(list1);
+			list2 = g_list_next(list2);
+		} else if (ret < 0) {
+			list1 = g_list_next(list1);
+		} else {
+			list2 = g_list_next(list2);
+		}
+	}
+
+	return count;
 }
 
 /* Conditionally remove some things from a manifest.

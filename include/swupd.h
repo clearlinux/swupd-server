@@ -178,6 +178,7 @@ extern void sort_manifest_by_version(struct manifest *manifest);
 extern bool manifest_includes(struct manifest *manifest, char *component);
 extern bool changed_includes(struct manifest *old, struct manifest *new);
 extern int prune_manifest(struct manifest *manifest);
+extern int remove_old_deleted_files(struct manifest *m1, struct manifest *m2);
 extern void create_manifest_delta(int oldversion, int newversion, char *module);
 extern void create_manifest_deltas(struct manifest *manifest, GList *last_versions_list);
 extern void subtract_manifests_frontend(struct manifest *m1, struct manifest *m2);

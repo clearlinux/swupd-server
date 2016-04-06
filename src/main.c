@@ -227,6 +227,7 @@ int main(int argc, char **argv)
 	GHashTable *old_manifests = g_hash_table_new(g_str_hash, g_str_equal);
 	GList *manifests_last_versions_list = NULL;
 	int newfiles = 0;
+	int old_deleted = 0;
 
 	struct timeval current_time;
 	struct timeval previous_time;
@@ -295,6 +296,13 @@ int main(int argc, char **argv)
 	apply_heuristics(old_full);
 	apply_heuristics(new_full);
 	match_manifests(old_full, new_full);
+
+	old_deleted = remove_old_deleted_files(old_full, new_full);
+	if (old_deleted > 0) {
+		LOG(NULL, "", "Old deleted files (%d) removed from full manifest", old_deleted);
+		printf("Old deleted files (%d) removed from full manifest\n", old_deleted);
+	}
+
 	apply_heuristics(new_full);
 #warning disabled rename detection for some simplicity
 	// rename_detection(new_full);
@@ -336,13 +344,14 @@ int main(int argc, char **argv)
 
 		sort_manifest_by_version(new_core);
 		newfiles = prune_manifest(new_core);
+		old_deleted = remove_old_deleted_files(old_core, new_core);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");
 			printf("Core component has not changed (after pruning), exiting\n");
 			goto exit;
 		}
-		LOG(NULL, "", "Core component has changes (%d), writing out new manifest", newfiles);
-		printf("Core component has changes (%d), writing out new manifest\n", newfiles);
+		LOG(NULL, "", "Core component has changes (%d new, %d deleted), writing out new manifest", newfiles, old_deleted);
+		printf("Core component has changes (%d new, %d deleted), writing out new manifest\n", newfiles, old_deleted);
 		if (write_manifest(new_core) != 0) {
 			LOG(NULL, "", "Core component manifest write failed");
 			printf("Core component manifest write failed\n");
@@ -440,9 +449,10 @@ int main(int argc, char **argv)
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
 			newfiles = prune_manifest(newm);
-			if (newfiles > 0 || changed_includes(oldm, newm)) {
-				LOG(NULL, "", "%s component has changes (%d), writing out new manifest", group, newfiles);
-				printf("%s component has changes (%d), writing out new manifest\n", group, newfiles);
+			old_deleted = remove_old_deleted_files(oldm, newm);
+			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
+				LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
+				printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
 				if (write_manifest(newm) != 0) {
 					LOG(NULL, "", "%s component manifest write failed", group);
 					printf("%s component manifest write failed\n", group);
