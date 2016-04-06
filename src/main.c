@@ -342,9 +342,9 @@ int main(int argc, char **argv)
 		/* Detect renamed files specifically for each pack */
 		// rename_detection(...);
 
+		old_deleted = remove_old_deleted_files(old_core, new_core);
 		sort_manifest_by_version(new_core);
 		newfiles = prune_manifest(new_core);
-		old_deleted = remove_old_deleted_files(old_core, new_core);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");
 			printf("Core component has not changed (after pruning), exiting\n");
@@ -446,10 +446,10 @@ int main(int argc, char **argv)
 			apply_heuristics(newm);
 #warning missing rename_detection here
 			/* Step 6b: otherwise, write out the manifest */
+			old_deleted = remove_old_deleted_files(oldm, newm);
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
 			newfiles = prune_manifest(newm);
-			old_deleted = remove_old_deleted_files(oldm, newm);
 			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
 				LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
 				printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
