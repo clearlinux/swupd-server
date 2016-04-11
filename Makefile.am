@@ -96,26 +96,26 @@ noinst_HEADERS = \
 	include/swupd.h \
 	include/xattrs.h
 
-TEST_EXTENSIONS = .sh
+TEST_EXTENSIONS = .bats
 
 if ENABLE_TESTS
 tap_driver = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 	$(top_srcdir)/tap-driver.sh
 
 LOG_DRIVER = $(tap_driver)
-SH_LOG_DRIVER = $(tap_driver)
+BATS_LOG_DRIVER = $(tap_driver)
 
 TESTS = $(dist_check_SCRIPTS)
 
 dist_check_SCRIPTS = \
-	test/functional/basic.bats \
-	test/functional/delete-no-version-bump.bats \
-	test/functional/include-version-bump.bats \
-	test/functional/update.bats \
-	test/functional/fullfiles.bats \
-	test/functional/pack.bats \
-	test/functional/full-run.bats \
-	test/functional/full-run-delta.bats
+	test/functional/basic/test.bats \
+	test/functional/delete-no-version-bump/test.bats \
+	test/functional/include-version-bump/test.bats \
+	test/functional/update/test.bats \
+	test/functional/fullfiles/test.bats \
+	test/functional/pack/test.bats \
+	test/functional/full-run/test.bats \
+	test/functional/full-run-delta/test.bats
 endif
 
 if COVERAGE

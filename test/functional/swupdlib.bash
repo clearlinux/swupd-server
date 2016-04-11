@@ -1,14 +1,28 @@
 # NOTE: source this file from a *.bats file
 
-init_web_dir() {
-  # absolute path is a hard requirement right now
-  local dir=$(realpath $1)
-  mkdir -p $dir/{image,www}
-  echo $dir
+# The location of the swupd_* binaries
+export SRCDIR="$BATS_TEST_DIRNAME/../../../"
+
+export CREATE_UPDATE="$SRCDIR/swupd_create_update"
+export MAKE_FULLFILES="$SRCDIR/swupd_make_fullfiles"
+export MAKE_PACK="$SRCDIR/swupd_make_pack"
+
+export DIR="$BATS_TEST_DIRNAME/web-dir"
+
+init_test_dir() {
+  local testdir="$BATS_TEST_DIRNAME"
+  mkdir -p "$testdir"/logs
+  mkdir -p $DIR/{image,www}
+  # run swupd_* inside the directory to dump the logs
+  cd "$testdir"/logs
+}
+
+clean_test_dir() {
+  sudo rm -rf $DIR "$BATS_TEST_DIRNAME"/logs
 }
 
 init_server_ini() {
-  cp $srcdir/server.ini $DIR
+  cp $SRCDIR/server.ini $DIR
   sed -i "s|/var/lib/update|$DIR|" $DIR/server.ini
 }
 

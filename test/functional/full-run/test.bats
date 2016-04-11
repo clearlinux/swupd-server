@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 
 # common functions
-load swupdlib
+load "../swupdlib"
 
 setup() {
-  DIR=$(init_web_dir "$srcdir/web-dir")
-  export DIR
+  clean_test_dir
+  init_test_dir
 
   init_server_ini
   set_latest_ver 0
@@ -20,10 +20,10 @@ setup() {
 }
 
 @test "full run update creation" {
-  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR --format 3
-  sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle
+  sudo $CREATE_UPDATE --osversion 10 --statedir $DIR --format 3
+  sudo $MAKE_FULLFILES --statedir $DIR 10
+  sudo $MAKE_PACK --statedir $DIR 0 10 os-core
+  sudo $MAKE_PACK --statedir $DIR 0 10 test-bundle
 
   # zero packs should exist (non-zero size) for the build
   [ -s $DIR/www/10/pack-os-core-from-0.tar ]
@@ -40,10 +40,6 @@ setup() {
   [[ 1 -eq $(grep '/usr/share/clear/bundles$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 4 -eq $(tar -tf $DIR/www/10/pack-test-bundle-from-0.tar | wc -l) ]]
   [[ 9 -eq $(tar -tf $DIR/www/10/pack-os-core-from-0.tar | wc -l) ]]
-}
-
-teardown() {
-  sudo rm -rf $DIR
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80

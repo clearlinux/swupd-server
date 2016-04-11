@@ -1,23 +1,25 @@
 #!/usr/bin/env bats
 
+load "../swupdlib"
+
 @test "create_update help output" {
-  run $srcdir/swupd_create_update --help
+  run $CREATE_UPDATE --help
   [ "$status" -eq 1 ]
-  run $srcdir/swupd_create_update -h
+  run $CREATE_UPDATE -h
   [ "$status" -eq 1 ]
 }
 
 @test "make_fullfiles help output" {
-  run $srcdir/swupd_make_fullfiles --help
+  run $MAKE_FULLFILES --help
   [ "$status" -eq 1 ]
-  run $srcdir/swupd_make_fullfiles -h
+  run $MAKE_FULLFILES -h
   [ "$status" -eq 1 ]
 }
 
 @test "make_pack help output" {
-  run $srcdir/swupd_make_pack --help
+  run $MAKE_PACK --help
   [ "$status" -eq 1 ]
-  run $srcdir/swupd_make_pack -h
+  run $MAKE_PACK -h
   [ "$status" -eq 1 ]
 }
 

@@ -27,7 +27,9 @@ coverage/
 src/*.gcno
 src/*.gcda
 tap-driver.sh
-test/functional/*.log
-test/functional/*.trs
+test/functional/*/*.log
+test/functional/*/*.trs
+test/functional/*/logs/
+test/functional/*/web-dir/
 swupd-*.log
 test-suite.log

@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 
 # common functions
-load swupdlib
+load "../swupdlib"
 
 setup() {
-  DIR=$(init_web_dir "$srcdir/web-dir")
-  export DIR
+  clean_test_dir
+  init_test_dir
 
   init_server_ini
   set_latest_ver 0
@@ -44,31 +44,31 @@ setup() {
 
 @test "full run update creation with delta packs" {
   # build the first version
-  sudo $srcdir/swupd_create_update --osversion 10 --statedir $DIR --format 3
-  sudo $srcdir/swupd_make_fullfiles --statedir $DIR 10
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 os-core
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 10 test-bundle
+  sudo $CREATE_UPDATE --osversion 10 --statedir $DIR --format 3
+  sudo $MAKE_FULLFILES --statedir $DIR 10
+  sudo $MAKE_PACK --statedir $DIR 0 10 os-core
+  sudo $MAKE_PACK --statedir $DIR 0 10 test-bundle
 
   set_latest_ver 10
 
   # then the second version...
-  sudo $srcdir/swupd_create_update --osversion 20 --statedir $DIR --format 3
-  sudo $srcdir/swupd_make_fullfiles --statedir $DIR 20
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 os-core
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 test-bundle
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 included
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 20 included-two
+  sudo $CREATE_UPDATE --osversion 20 --statedir $DIR --format 3
+  sudo $MAKE_FULLFILES --statedir $DIR 20
+  sudo $MAKE_PACK --statedir $DIR 0 20 os-core
+  sudo $MAKE_PACK --statedir $DIR 0 20 test-bundle
+  sudo $MAKE_PACK --statedir $DIR 0 20 included
+  sudo $MAKE_PACK --statedir $DIR 0 20 included-two
 
   set_latest_ver 20
 
   # then the third version...
-  sudo $srcdir/swupd_create_update --osversion 30 --statedir $DIR --format 3
-  sudo $srcdir/swupd_make_fullfiles --statedir $DIR 30
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 30 os-core
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 30 test-bundle
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 30 included
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 30 included-two
-  sudo $srcdir/swupd_make_pack --statedir $DIR 0 30 included-nested
+  sudo $CREATE_UPDATE --osversion 30 --statedir $DIR --format 3
+  sudo $MAKE_FULLFILES --statedir $DIR 30
+  sudo $MAKE_PACK --statedir $DIR 0 30 os-core
+  sudo $MAKE_PACK --statedir $DIR 0 30 test-bundle
+  sudo $MAKE_PACK --statedir $DIR 0 30 included
+  sudo $MAKE_PACK --statedir $DIR 0 30 included-two
+  sudo $MAKE_PACK --statedir $DIR 0 30 included-nested
 
   # zero packs should exist (non-zero size) for both versions
   [ -s $DIR/www/10/pack-os-core-from-0.tar ]
@@ -94,10 +94,6 @@ setup() {
   [[ 1 -eq $(grep '/foobarbaz$' $DIR/www/30/Manifest.included-nested | wc -l) ]]
   [[ 0 -eq $(ls $DIR/www/30/Manifest.test-bundle | wc -l) ]]
   [[ 0 -eq $(ls $DIR/www/30/Manifest.included-two | wc -l) ]]
-}
-
-teardown() {
-  sudo rm -rf $DIR
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80
