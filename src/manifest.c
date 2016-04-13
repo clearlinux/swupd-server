@@ -520,31 +520,39 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	return count;
 }
 
-static GList *get_unique_includes(struct manifest *manifest)
+static GList *get_unique_includes(struct manifest *manifest, GHashTable *unique_includes)
 {
-	GHashTable *unique_includes = g_hash_table_new(g_str_hash, g_str_equal);
 	GHashTableIter iter;
 	GList *includes = NULL;
-	GList *l1, *l2;
+	GList *l1;
 	gpointer k, v;
+	bool skip_list = true;
+
+	if (!unique_includes) {
+		skip_list = false;
+		unique_includes = g_hash_table_new(g_str_hash, g_str_equal);
+	}
 
 	l1 = g_list_first(manifest->includes);
 	while (l1) {
 		struct manifest *m = l1->data;
 		l1 = g_list_next(l1);
-		(void)g_hash_table_replace(unique_includes, m->component, m);
-		l2 = get_unique_includes(m);
-		while (l2) {
-			struct manifest *m = l2->data;
-			l2 = g_list_next(l2);
-			(void)g_hash_table_replace(unique_includes, m->component, m);
+		if (g_hash_table_contains(unique_includes, m->component)) {
+			continue;
 		}
-		g_list_free(l2);
+		(void)g_hash_table_replace(unique_includes, m->component, m);
+		(void)get_unique_includes(m, unique_includes);
 	}
+
+	if (skip_list) {
+		return NULL;
+	}
+
 	g_hash_table_iter_init(&iter, unique_includes);
 	while (g_hash_table_iter_next(&iter, &k, &v)) {
 		includes = g_list_prepend(includes, v);
 	}
+	g_hash_table_destroy(unique_includes);
 
 	return includes;
 }
@@ -611,7 +619,7 @@ void subtract_manifests_frontend(struct manifest *m1, struct manifest *m2)
 
 	subtract_manifests(m1, m2);
 
-	includes = get_unique_includes(m2);
+	includes = get_unique_includes(m2, NULL);
 	while (includes) {
 		m = includes->data;
 		includes = g_list_next(includes);
