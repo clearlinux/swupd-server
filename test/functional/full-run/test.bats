@@ -29,6 +29,8 @@ setup() {
   [ -s $DIR/www/10/pack-os-core-from-0.tar ]
   [ -s $DIR/www/10/pack-test-bundle-from-0.tar ]
 
+  [[ 1 -eq $(grep '^filecount:	1$' $DIR/www/10/Manifest.MoM.includes | wc -l) ]]
+  [[ 1 -eq $(grep '^test-bundle	os-core$' $DIR/www/10/Manifest.MoM.includes | wc -l) ]]
   [[ 1 -eq $(grep '^includes:	os-core$' $DIR/www/10/Manifest.test-bundle | wc -l) ]]
   [[ 1 -eq $(grep '/usr/share/clear/bundles/test-bundle$' $DIR/www/10/Manifest.test-bundle | wc -l) ]]
   [[ 1 -eq $(grep '/foo$' $DIR/www/10/Manifest.test-bundle | wc -l) ]]
@@ -38,6 +40,7 @@ setup() {
   [[ 1 -eq $(grep '/usr/share$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 1 -eq $(grep '/usr/share/clear$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 1 -eq $(grep '/usr/share/clear/bundles$' $DIR/www/10/Manifest.os-core | wc -l) ]]
+  [[ 2 -eq $(tar -tf $DIR/www/10/Manifest.MoM.tar | wc -l) ]]
   [[ 4 -eq $(tar -tf $DIR/www/10/pack-test-bundle-from-0.tar | wc -l) ]]
   [[ 9 -eq $(tar -tf $DIR/www/10/pack-os-core-from-0.tar | wc -l) ]]
 }
