@@ -88,6 +88,18 @@ int file_sort_filename(gconstpointer a, gconstpointer b)
 	return 0;
 }
 
+int manifest_sort_component(gconstpointer a, gconstpointer b)
+{
+	int ret;
+	struct manifest *A, *B;
+	A = (struct manifest *)a;
+	B = (struct manifest *)b;
+
+	ret = strcmp(A->component, B->component);
+
+	return ret;
+}
+
 struct manifest *alloc_manifest(int version, char *component)
 {
 	struct manifest *manifest;
@@ -727,6 +739,97 @@ exit:
 }
 
 /* Returns 0 == success, -1 == failure */
+static int write_includes_plain(struct manifest *manifest)
+{
+	FILE *out = NULL;
+	GList *submanifests;
+	GHashTable *manifest_includes = g_hash_table_new(g_str_hash,
+							 g_str_equal);
+	char *base = NULL;
+	char *conf = config_output_dir();
+	char *dir = NULL;
+	char *filename = NULL;
+	int ret = -1;
+	unsigned int count = 0;
+
+	/* ignore non MoM manifests */
+	if (strcmp(manifest->component, "MoM")) {
+		ret = 0;
+		goto exit;
+	}
+
+	if (conf == NULL) {
+		assert(0);
+	}
+	string_or_die(&filename, "%s/%i/includes-list", conf,
+		      manifest->version);
+
+	base = strdup(filename);
+	if (base == NULL) {
+		assert(0);
+	}
+	dir = dirname(base);
+
+	if (g_mkdir_with_parents(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+		assert(0);
+	}
+
+	out = fopen(filename, "w");
+	if (out == NULL) {
+		printf("Failed to open %s for write\n", filename);
+		goto exit;
+	}
+
+	submanifests = g_list_first(manifest->submanifests);
+	while (submanifests) {
+		struct manifest *m = submanifests->data;
+		submanifests = g_list_next(submanifests);
+		GList *i = get_unique_includes(m, NULL);
+		if (!i) {
+			continue;
+		}
+		count += g_list_length(i);
+		(void)g_hash_table_replace(manifest_includes, m->component, i);
+	}
+
+	fprintf(out, "INCLUDES\t%llu\n", format);
+	fprintf(out, "version:\t%i\n", manifest->version);
+	fprintf(out, "previous:\t%i\n", manifest->prevversion);
+	fprintf(out, "filecount:\t%i\n", count);
+	fprintf(out, "timestamp:\t%i\n", (int)time(NULL));
+	fprintf(out, "\n");
+
+	submanifests = g_list_sort(g_list_first(manifest->submanifests),
+				   manifest_sort_component);
+	while (submanifests) {
+		struct manifest *m = submanifests->data;
+		submanifests = g_list_next(submanifests);
+		GList *i = g_hash_table_lookup(manifest_includes, m->component);
+		if (!i) {
+			continue;
+		}
+		while (i) {
+			struct manifest *mi = i->data;
+			i = g_list_next(i);
+			fprintf(out, "%s\t%s\n", m->component,
+				mi->component);
+		}
+		g_list_free(i);
+	}
+	ret = 0;
+exit:
+	if (out) {
+		fclose(out);
+	}
+	free(conf);
+	free(base);
+	free(filename);
+	g_hash_table_destroy(manifest_includes);
+	return ret;
+}
+
+
+/* Returns 0 == success, -1 == failure */
 static int write_manifest_plain(struct manifest *manifest)
 {
 	GList *includes;
@@ -815,6 +918,8 @@ exit:
 static int write_manifest_tar(struct manifest *manifest)
 {
 	char *conf = config_output_dir();
+	char *files = NULL;
+	char *append = NULL;
 	char *tarcmd = NULL;
 	int ret = -1;
 
@@ -822,19 +927,24 @@ static int write_manifest_tar(struct manifest *manifest)
 		assert(0);
 	}
 
+	string_or_die(&files, "Manifest.%s", manifest->component);
+	if (enable_signing) {
+		string_or_die(&append, "%s Manifest.%s.signed", files, manifest->component);
+		free(files);
+		files = append;
+	}
+	if (strcmp(manifest->component, "MoM") == 0) {
+		string_or_die(&append, "%s includes-list", files, manifest->component);
+		free(files);
+		files = append;
+	}
+
 	/* now, tar the thing up for efficient full file download */
 	/* and put the signature of the plain manifest into the archive, too */
-	if (enable_signing) {
-		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-						   "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
-			      conf, manifest->version, conf, manifest->version, manifest->component,
-			      manifest->component, manifest->component);
-	} else {
-		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-						   "%s/%i/Manifest.%s.tar Manifest.%s",
-			      conf, manifest->version, conf, manifest->version, manifest->component,
-			      manifest->component);
-	}
+	string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
+		      "%s/%i/Manifest.%s.tar %s",
+		      conf, manifest->version, conf, manifest->version, manifest->component,
+		      files);
 
 	if (system(tarcmd) != 0) {
 		fprintf(stderr, "Creation of Manifest.tar failed\n");
@@ -842,6 +952,7 @@ static int write_manifest_tar(struct manifest *manifest)
 	}
 	ret = 0;
 exit:
+	free(files);
 	free(tarcmd);
 	free(conf);
 	return ret;
@@ -873,6 +984,7 @@ int write_manifest(struct manifest *manifest)
 {
 	if (write_manifest_plain(manifest) == 0 &&
 	    write_manifest_signature(manifest, "") == 0 &&
+	    write_includes_plain(manifest) == 0 &&
 	    write_manifest_tar(manifest) == 0 &&
 	    write_manifest_signature(manifest, ".tar") == 0) {
 		return 0;
