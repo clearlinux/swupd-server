@@ -15,6 +15,7 @@ swupd_create_update_SOURCES = \
 	src/analyze_fs.c \
 	src/chroot.c \
 	src/config.c \
+	src/create_update.c \
 	src/delta.c \
 	src/fullfiles.c \
 	src/globals.c \
@@ -22,7 +23,6 @@ swupd_create_update_SOURCES = \
 	src/helpers.c \
 	src/heuristics.c \
 	src/log.c \
-	src/main.c \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
