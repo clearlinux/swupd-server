@@ -257,8 +257,8 @@ static GList *consolidate_packs_delta_files(GList *files, struct packdata *pack)
 			continue;
 		}
 
-		string_or_die(&from, "%s/%i/delta/%i-%i-%s", staging_dir, file->last_change,
-			      file->peer->last_change, file->last_change, file->hash);
+		string_or_die(&from, "%s/%i/delta/%i-%i-%s-%s", staging_dir, file->last_change,
+			      file->peer->last_change, file->last_change, file->peer->hash, file->hash);
 
 		ret = stat(from, &stat_delta);
 		if (ret && !find_file_in_list(files, file)) {
@@ -277,7 +277,7 @@ static void create_delta(gpointer data, __unused__ gpointer user_data)
 
 	/* if the file was not found in the from version, skip delta creation */
 	if (file->peer) {
-		__create_delta(file, file->peer->last_change);
+		__create_delta(file, file->peer->last_change, file->peer->hash);
 	}
 }
 
@@ -356,11 +356,11 @@ static int make_final_pack(struct packdata *pack)
 
 		/* for each file changed since <X> */
 		/* locate delta, check if the diff it's from is >= <X> */
-		string_or_die(&from, "%s/%i/delta/%i-%i-%s", staging_dir, file->last_change,
-			      file->peer->last_change, file->last_change, file->hash);
-		string_or_die(&to, "%s/%s/%i_to_%i/delta/%i-%i-%s", packstage_dir,
+		string_or_die(&from, "%s/%i/delta/%i-%i-%s-%s", staging_dir, file->last_change,
+			      file->peer->last_change, file->last_change, file->peer->hash, file->hash);
+		string_or_die(&to, "%s/%s/%i_to_%i/delta/%i-%i-%s-%s", packstage_dir,
 			      pack->module, pack->from, pack->to, file->peer->last_change,
-			      file->last_change, file->hash);
+			      file->last_change, file->peer->hash, file->hash);
 		string_or_die(&tarfrom, "%s/%i/files/%s.tar", staging_dir,
 			      file->last_change, file->hash);
 		string_or_die(&tarto, "%s/%s/%i_to_%i/staged/%s.tar", packstage_dir,
