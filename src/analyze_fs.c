@@ -286,18 +286,15 @@ static bool illegal_characters(char *filename)
 	// these breaks the tar transform sed-like expression,
 	// hopefully can remove this check after moving to libtar
 	if (strncmp(filename, "+", 1) == 0) {
-		printf("WARNING: Filename %s begins with '+'! ...skipping.\n", filename);
 		return true;
 	}
 	if (strstr(filename, "+package+") != NULL) {
-		printf("WARNING: Filename %s contains \"+package+\"! ...skipping.\n", filename);
 		return true;
 	}
 
 	for (i = 0; i < BAD_CHAR_COUNT; i++) {
 		c = bad_chars[i];
 		if (strchr(filename, c) != NULL) {
-			printf("WARNING: Filename %s includes illegal character '%c'! ...skipping.\n", filename, c);
 			return true;
 		}
 	}
@@ -323,6 +320,7 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 
 	while (dir) {
 		struct file *file;
+		char *sub_filename;
 		char *fullname;
 
 		entry = readdir(dir);
@@ -331,8 +329,15 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		}
 
 		if ((strcmp(entry->d_name, ".") == 0) ||
-		    (strcmp(entry->d_name, "..") == 0) ||
-		    (illegal_characters(entry->d_name))) {
+		    (strcmp(entry->d_name, "..") == 0)) {
+			continue;
+		}
+
+		string_or_die(&sub_filename, "%s/%s", subpath, entry->d_name);
+
+		if (illegal_characters(entry->d_name)) {
+			printf("WARNING: Filename %s includes illegal character(s) ...skipping.\n", sub_filename);
+			free(sub_filename);
 			continue;
 		}
 
@@ -342,7 +347,7 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		}
 
 		file->last_change = manifest->version;
-		string_or_die(&file->filename, "%s/%s", subpath, entry->d_name);
+		file->filename = sub_filename;
 
 		string_or_die(&fullname, "%s/%s", fullpath, entry->d_name);
 		populate_file_struct(file, fullname);
