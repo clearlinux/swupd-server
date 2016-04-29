@@ -87,21 +87,21 @@ gen_file_to_delta() {
 gen_file_plain() {
   local ver=$1
   local bundle=$2
-  local name=$3
+  local name="$3"
 
   # Add plain text file into a bundle
   mkdir -p $DIR/image/$ver/$bundle
-  echo $name > $DIR/image/$ver/$bundle/$name
+  echo "$name" > $DIR/image/$ver/$bundle/"$name"
 }
 
 gen_file_plain_change() {
   local ver=$1
   local bundle=$2
-  local name=$3
+  local name="$3"
 
   # Add plain text file into a bundle
   mkdir -p $DIR/image/$ver/$bundle
-  echo $ver $name > $DIR/image/$ver/$bundle/$name
+  echo "$ver $name" > $DIR/image/$ver/$bundle/"$name"
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80
