@@ -115,7 +115,8 @@ dist_check_SCRIPTS = \
 	test/functional/fullfiles/test.bats \
 	test/functional/pack/test.bats \
 	test/functional/full-run/test.bats \
-	test/functional/full-run-delta/test.bats
+	test/functional/full-run-delta/test.bats \
+	test/functional/file-name-blacklisted/test.bats
 endif
 
 if COVERAGE
