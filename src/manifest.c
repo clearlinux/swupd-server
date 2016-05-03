@@ -729,6 +729,9 @@ static int write_manifest_plain(struct manifest *manifest)
 	char *conf = config_output_dir();
 	char *filename = NULL;
 	char *submanifest_filename = NULL;
+	char *manifest_tempdir = NULL;
+	char *tarcommand = NULL;
+	char *tempmanifest = NULL;
 	int ret = -1;
 
 	if (conf == NULL) {
@@ -776,17 +779,37 @@ static int write_manifest_plain(struct manifest *manifest)
 	}
 
 	list = g_list_first(manifest->manifests);
+	string_or_die(&manifest_tempdir, "%s/XXXXXX", state_dir);
+	if (!mkdtemp(manifest_tempdir)) {
+		LOG(NULL, "Failed to create temporary directory %s for untarring Manifests", manifest_tempdir);
+		assert(0);
+	}
+
 	while (list) {
 		file = list->data;
 		list = g_list_next(list);
 
 		string_or_die(&submanifest_filename, "%s/%i/Manifest.%s", conf, file->last_change, file->filename);
-		populate_file_struct(file, submanifest_filename);
-		ret = compute_hash(file, submanifest_filename);
+
+		/* Untar the Manifest.BUNDLE.tar and calculate the hash on that,
+		 * otherwise we may get incorrect hashes due to owner permissions on
+		 * the files. */
+		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf %s.tar 2> /dev/null",
+				manifest_tempdir, submanifest_filename);
+		if (system(tarcommand) != 0) {
+			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+			assert(0);
+		}
+		free(tarcommand);
+		string_or_die(&tempmanifest, "%s/Manifest.%s", manifest_tempdir, file->filename);
+		populate_file_struct(file, tempmanifest);
+		ret = compute_hash(file, tempmanifest);
 		if (ret != 0) {
 			printf("Hash computation failed\n");
 			assert(0);
 		}
+		unlink(tempmanifest);
+		free(tempmanifest);
 
 		fprintf(out, "%s\t%s\t%i\t%s\n", file_type_to_string(file), file->hash, file->last_change, file->filename);
 		free(submanifest_filename);
@@ -794,6 +817,11 @@ static int write_manifest_plain(struct manifest *manifest)
 
 	ret = 0;
 exit:
+	if (rmdir(manifest_tempdir) != 0) {
+		LOG(NULL, "rmdir failed for %s: %s", manifest_tempdir, strerror(errno));
+	}
+	free(manifest_tempdir);
+
 	if (out) {
 		fclose(out);
 	}
