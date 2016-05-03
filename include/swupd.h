@@ -19,17 +19,21 @@
 #if SWUPD_WITH_BSDTAR
 #define TAR_COMMAND "bsdtar"
 #define TAR_XATTR_ARGS ""
+#define TAR_XATTR_ARGS_STRLIST
 #define TAR_WARN_ARGS ""
 #else
 #define TAR_COMMAND "tar"
 #define TAR_XATTR_ARGS "--xattrs --xattrs-include='*'"
+#define TAR_XATTR_ARGS_STRLIST "--xattrs", "--xattrs-include='*'",
 #define TAR_WARN_ARGS "--warning=no-timestamp"
 #endif
 
 #if SWUPD_WITH_SELINUX
 #define TAR_PERM_ATTR_ARGS "--preserve-permissions --selinux " TAR_XATTR_ARGS
+#define TAR_PERM_ATTR_ARGS_STRLIST TAR_XATTR_ARGS_STRLIST "--preserve-permissions", "--selinux"
 #else
 #define TAR_PERM_ATTR_ARGS "--preserve-permissions " TAR_XATTR_ARGS
+#define TAR_PERM_ATTR_ARGS_STRLIST TAR_XATTR_ARGS_STRLIST "--preserve-permissions"
 #endif
 
 #if SWUPD_WITH_STATELESS
@@ -248,6 +252,9 @@ extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
 extern void print_elapsed_time(const char *step, struct timeval *previous_time, struct timeval *current_time);
 extern int system_argv(char *const argv[]);
+extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
+extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
+							char *const argvp2[], int stdoutp2, int stderrp2);
 
 extern bool signature_initialize(void);
 extern void signature_terminate(void);

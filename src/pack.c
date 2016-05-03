@@ -40,21 +40,19 @@
 
 static void empty_pack_stage(int full, int from_version, int to_version, char *module)
 {
-	char *cmd;
+	char *param;
 	char *path;
-	int ret;
 
 	// clean any stale data (eg: re-run after a failure)
-	string_or_die(&cmd, "rm -rf %s/%s/%i_to_%i/", packstage_dir, module,
-		      from_version, to_version);
-	ret = system(cmd);
-	if (ret) {
+	string_or_die(&param, "%s/%s/%i_to_%i/", packstage_dir, module, from_version, to_version);
+	char *const rmcmd[] = { "rm", "-fr", param, NULL };
+	if (system_argv(rmcmd) != 0) {
 		fprintf(stderr, "Failed to clean %s/%s/%i_to_%i\n",
 			packstage_dir, module, from_version, to_version);
-		free(cmd);
+		free(param);
 		exit(EXIT_FAILURE);
 	}
-	free(cmd);
+	free(param);
 
 	if (!full) {
 		// (re)create module/version/{delta,staged}
@@ -89,7 +87,7 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 	}
 	free(path);
 	while (1) {
-		char *path, *tar;
+		char *path, *param;
 		int ret;
 
 		entry = readdir(dir);
@@ -117,13 +115,12 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&tar, TAR_COMMAND " --directory=%s/%s/%i_to_%i/staged " TAR_WARN_ARGS " " TAR_PERM_ATTR_ARGS " -xf %s",
-			      packstage_dir, module, from_version, to_version, path);
-		ret = system(tar);
-		if (!ret) {
+		string_or_die(&param, "--directory=%s/%s/%i_to_%i/staged", packstage_dir, module, from_version, to_version);
+		char *const tarcmd[] = { TAR_COMMAND, param, TAR_WARN_ARGS, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", path, NULL };
+		if (system_argv(tarcmd) == 0) {
 			unlink(path);
 		}
-		free(tar);
+		free(param);
 		free(path);
 	}
 	closedir(dir);
@@ -334,7 +331,7 @@ static int make_final_pack(struct packdata *pack)
 	GList *item;
 	struct file *file;
 	int ret;
-	char *tar;
+	char *param1, *param2;
 	double penalty;
 
 	LOG(NULL, "make_final_pack", "%s: %i to %i", pack->module, pack->from, pack->to);
@@ -491,15 +488,15 @@ static int make_final_pack(struct packdata *pack)
 
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
-	string_or_die(&tar, TAR_COMMAND " " TAR_PERM_ATTR_ARGS " --directory=%s/%s/%i_to_%i/ "
-					"--numeric-owner -Jcf %s/%i/pack-%s-from-%i.tar delta staged",
-		      packstage_dir, pack->module, pack->from, pack->to, staging_dir, pack->to,
-		      pack->module, pack->from);
-	ret = system(tar);
-	free(tar);
+	string_or_die(&param1, "--directory=%s/%s/%i_to_%i/", packstage_dir, pack->module, pack->from, pack->to);
+	string_or_die(&param2, "%s/%i/pack-%s-from-%i.tar", staging_dir, pack->to, pack->module, pack->from);
+	char *const tarcmd[] = { TAR_COMMAND, TAR_PERM_ATTR_ARGS_STRLIST, param1, "--numeric-owner", "-Jcf", param2, "delta", "staged", NULL };
+	ret = system_argv(tarcmd);
+	free(param1);
+	free(param2);
 	LOG(NULL, "finished tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
 	/* FIXME: this is a hack workaround, needs diagnosed and removed */
-	if ((ret != 0) && (ret != 256)) {
+	if ((ret != 0) && (ret != 1)) {
 		fprintf(stderr, "Unexpected return value (%d) creating tar of pack %s from %i to %i\n",
 			ret, pack->module, pack->from, pack->to);
 	} else {
