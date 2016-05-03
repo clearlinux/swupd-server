@@ -35,10 +35,6 @@
 
 static char *make_filename(const char *, const char *, const char *);
 
-static const char *CMD_FMT = "openssl smime -sign -in %s -binary "
-			     "-out %s.signed -outform PEM -md sha256 -inkey %s -signer %s "
-			     "-certfile %s -passin file:%s";
-
 static char *leaf_key = NULL;
 static char *leaf_cert = NULL;
 static char *ca_chain_cert = NULL;
@@ -150,7 +146,7 @@ void signature_terminate(void)
  */
 bool signature_sign(const char *filename)
 {
-	char *cmd = NULL;
+	char *param1, *param2;
 	int status;
 
 	if (!enable_signing) {
@@ -160,12 +156,18 @@ bool signature_sign(const char *filename)
 	if (!initialized) {
 		return false;
 	}
-	string_or_die(&cmd, CMD_FMT, filename, filename, leaf_key, leaf_cert,
-		      ca_chain_cert, passphrase);
-	status = system(cmd);
-	if (status) {
-		printf("Bad status %d from signing command:%s\n", status, cmd);
+	string_or_die(&param1, "%s.signed", filename);
+	string_or_die(&param2, "file:%s", passphrase);
+	char *const opensslcmd[] = { "openssl", "smime", "-sign", "-in", (char*)filename, "-binary",
+						   "-out",  param1, "-outform", " PEM", "-md", "sha256", "-inkey",
+						   leaf_key, "-signer", leaf_cert, "-certfile",  ca_chain_cert,
+						   "-passin", param2, NULL };
+	status = system_argv(opensslcmd);
+	if (status != 0) {
+		printf("Bad status %d from signing command\n", status);
 	}
-	free(cmd);
+	free(param1);
+	free(param2);
+
 	return status == 0;
 }

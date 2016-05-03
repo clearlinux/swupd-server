@@ -191,6 +191,81 @@ int system_argv(char *const argv[])
 	}
 }
 
+int system_argv_fd(char *const argv[], int stdin, int stdout, int stderr)
+{
+	int child_exit_status;
+	pid_t pid;
+	int status;
+
+	pid = fork();
+
+	if (pid == 0) { /* child */
+		if(stdin >= 0) {
+			dup2(stdin, STDIN_FILENO);
+			close(stdin);
+		}
+		if(stdout >= 0) {
+			dup2(stdout, STDOUT_FILENO);
+			close(stdout);
+		}
+		if(stderr >= 0) {
+			dup2(stderr, STDERR_FILENO);
+			close(stderr);
+		}
+
+		execvp(*argv, argv);
+		LOG(NULL, "This line must not be reached", "");
+		assert(0);
+	} else if (pid < 0) {
+		LOG(NULL, "Failed to fork a child process", "");
+		assert(0);
+	} else {
+		pid_t ws = waitpid(pid, &child_exit_status, 0);
+
+		if (ws == -1) {
+			LOG(NULL, "Failed to wait for child process", "");
+			assert(0);
+		}
+
+		if (WIFEXITED(child_exit_status)) {
+			status = WEXITSTATUS(child_exit_status);
+		} else {
+			LOG(NULL, "Child process didn't exit", "");
+			assert(0);
+		}
+
+		if (status != 0) {
+			char *cmdline = NULL;
+
+			concat_str_array(&cmdline, argv);
+			LOG(NULL, "Failed to run command:", "%s", cmdline);
+			free(cmdline);
+		}
+
+		return status;
+	}
+}
+
+int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
+					 char *const argvp2[], int stdoutp2, int stderrp2)
+{
+	int statusp1, statusp2;
+	int pipefd[2];
+
+	if (pipe(pipefd)) {
+		LOG(NULL, "Failed to create a pipe", "");
+		return -1;
+	}
+	statusp1 = system_argv_fd(argvp1, stdinp1, pipefd[1], stderrp1);
+	close(pipefd[1]);
+	statusp2 = system_argv_fd(argvp2, pipefd[0], stdoutp2, stderrp2);
+	close(pipefd[0]);
+
+	/* Returns the status of the failed process if any
+       If both processes failed returns the status of first one */
+	return statusp1 ? statusp1 : statusp2;
+}
+
 void check_root(void)
 {
 	if (getuid() != 0) {
