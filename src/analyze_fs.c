@@ -272,35 +272,6 @@ static void get_hash(gpointer data, gpointer user_data)
 	free(filename);
 }
 
-/* disallow characters which can do unexpected things when the filename is
- * used on a tar command line via system("tar [args] filename [more args]");
- */
-static bool illegal_characters(char *filename)
-{
-	char c;
-	int i;
-#define BAD_CHAR_COUNT 11
-	char bad_chars[BAD_CHAR_COUNT] = { ';', '&', '|', '*', '`', '/',
-					   '<', '>', '\\', '\"', '\'' };
-
-	// these breaks the tar transform sed-like expression,
-	// hopefully can remove this check after moving to libtar
-	if (strncmp(filename, "+", 1) == 0) {
-		return true;
-	}
-	if (strstr(filename, "+package+") != NULL) {
-		return true;
-	}
-
-	for (i = 0; i < BAD_CHAR_COUNT; i++) {
-		c = bad_chars[i];
-		if (strchr(filename, c) != NULL) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static void iterate_directory(struct manifest *manifest, char *pathprefix,
 			      char *subpath, bool do_hash)
 {
@@ -334,12 +305,6 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		}
 
 		string_or_die(&sub_filename, "%s/%s", subpath, entry->d_name);
-
-		if (illegal_characters(entry->d_name)) {
-			printf("WARNING: Filename %s includes illegal character(s) ...skipping.\n", sub_filename);
-			free(sub_filename);
-			continue;
-		}
 
 		file = calloc(1, sizeof(struct file));
 		if (!file) {
