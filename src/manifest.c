@@ -857,20 +857,16 @@ static int write_manifest_tar(struct manifest *manifest)
 	if (enable_signing) {
 		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
 								 manifesttar, manifestcomp, manifestsigned, NULL};
-		if (system_argv(tarcmd) != 0) {
-			fprintf(stderr, "Creation of Manifest.tar failed\n");
-			goto exit;
-		}
+		ret = system_argv(tarcmd);
 	} else {
 		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
 								 manifesttar, manifestcomp, NULL};
-		if (system_argv(tarcmd) != 0) {
-			fprintf(stderr, "Creation of Manifest.tar failed\n");
-			goto exit;
-		}
+		ret = system_argv(tarcmd);
+	}
+	if (ret) {
+		fprintf(stderr, "Creation of Manifest.tar failed\n");
 	}
 
-	ret = 0;
 exit:
 	free(directory);
 	free(manifesttar);
