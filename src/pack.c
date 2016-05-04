@@ -496,7 +496,7 @@ static int make_final_pack(struct packdata *pack)
 	free(param2);
 	LOG(NULL, "finished tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
 	/* FIXME: this is a hack workaround, needs diagnosed and removed */
-	if ((ret != 0) && (ret != 256)) {
+	if ((ret != 0) && (ret != 1)) {
 		fprintf(stderr, "Unexpected return value (%d) creating tar of pack %s from %i to %i\n",
 			ret, pack->module, pack->from, pack->to);
 	} else {
