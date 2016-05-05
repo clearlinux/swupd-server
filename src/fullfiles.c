@@ -123,6 +123,7 @@ static void create_fullfile(struct file *file)
 		if (rmdir(rename_tmpdir)) {
 			LOG(NULL, "rmdir failed for %s", rename_tmpdir);
 		}
+		free(rename_tmpdir);
 
 		free(tmp1);
 		free(tmp2);
