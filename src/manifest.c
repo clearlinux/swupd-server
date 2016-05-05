@@ -790,6 +790,11 @@ static int write_manifest_plain(struct manifest *manifest)
 		list = g_list_next(list);
 
 		string_or_die(&submanifest_filename, "%s/%i/Manifest.%s", conf, file->last_change, file->filename);
+		populate_file_struct(file, submanifest_filename);
+
+		if (file->is_deleted) {
+			goto write_entry;
+		}
 
 		/* Untar the Manifest.BUNDLE.tar and calculate the hash on that,
 		 * otherwise we may get incorrect hashes due to owner permissions on
@@ -810,7 +815,7 @@ static int write_manifest_plain(struct manifest *manifest)
 		}
 		unlink(tempmanifest);
 		free(tempmanifest);
-
+write_entry:
 		fprintf(out, "%s\t%s\t%i\t%s\n", file_type_to_string(file), file->hash, file->last_change, file->filename);
 		free(submanifest_filename);
 	}
