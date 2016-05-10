@@ -65,25 +65,5 @@ void chroot_create_full(int newversion)
 		assert(ret == 0);
 		free(command);
 	}
-
-	/* and since some dumb files have things like install timestamps in
-	 * them, we pull files from full back to bundles so each instance
-	 * of the "same" file is truly identical across bundles.  It may
-	 * make sense at some point to add more logic here for conflict
-	 * detection and resolution, including work to insure renames are
-	 * consistent across groups. */
-	while (1) {
-		group = next_group();
-		if (!group) {
-			break;
-		}
-
-		LOG(NULL, "Recopy bundle chroot out of full", "%s", group);
-		string_or_die(&command, "rsync -aAX --existing %s %s/%i/%s",
-			      full_dir, image_dir, newversion, group);
-		ret = system(command);
-		assert(ret == 0);
-		free(command);
-	}
 	free(full_dir);
 }
