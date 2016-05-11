@@ -107,16 +107,21 @@ void string_or_die(char **strp, const char *fmt, ...)
 	va_end(ap);
 }
 
-void print_elapsed_time(struct timeval *previous_time, struct timeval *current_time)
+/* "step" should be a descriptive string for the process that completed before
+ * this function is called */
+void print_elapsed_time(const char *step, struct timeval *previous_time,
+			struct timeval *current_time)
 {
 	char *elapsed;
+
+	assert(strlen(step) > 0);
 
 	gettimeofday(current_time, NULL);
 	elapsed = get_elapsed_time(previous_time, current_time);
 	if (strcmp(elapsed, " ") == 0) {
-		printf("\t~0.0 elapsed for Manifest.full creation\n");
+		printf("\t~0.0 elapsed for '%s' step\n", step);
 	} else {
-		printf("\t%s elapsed for full chroot creation\n", elapsed);
+		printf("\t%s elapsed for '%s' step\n", elapsed, step);
 	}
 	previous_time->tv_sec = current_time->tv_sec;
 	previous_time->tv_usec = current_time->tv_usec;

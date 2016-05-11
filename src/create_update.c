@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 	printf("Syncing bundle chroots with full chroot\n");
 	chroot_create_full(newversion);
 
-	print_elapsed_time(&previous_time, &current_time);
+	print_elapsed_time("full chroot creation", &previous_time, &current_time);
 
 	printf("Calculating full manifest (this is expensive/slow)\n");
 	old_full = manifest_from_file(current_version, "full");
@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 #warning disabled rename detection for some simplicity
 	// rename_detection(new_full);
 
-	print_elapsed_time(&previous_time, &current_time);
+	print_elapsed_time("full manifest creation", &previous_time, &current_time);
 
 	printf("Entering phase 2: Doing the os-core bundle\n");
 	/* Phase 2 : the os-core set */
@@ -469,7 +469,7 @@ int main(int argc, char **argv)
 		nest_manifest(new_MoM, newm);
 	}
 
-	print_elapsed_time(&previous_time, &current_time);
+	print_elapsed_time("bundle manifest creation", &previous_time, &current_time);
 
 	printf("Entering phase 4: completion manifests \n");
 	/* Phase 4 : manifest completion */
@@ -482,7 +482,7 @@ int main(int argc, char **argv)
 	}
 	create_manifest_deltas(new_MoM, manifests_last_versions_list);
 
-	print_elapsed_time(&previous_time, &current_time);
+	print_elapsed_time("MoM creation", &previous_time, &current_time);
 
 	printf("Entering phase 5: creating download content\n");
 	/* Phase 5: wrapping up */
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
 	/* Step 8: Prepare delta directory */
 	prepare_delta_dir(new_full);
 
-	print_elapsed_time(&previous_time, &current_time);
+	print_elapsed_time("finalize update", &previous_time, &current_time);
 
 	exit_status = EXIT_SUCCESS;
 exit:

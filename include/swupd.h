@@ -246,7 +246,7 @@ extern void account_delta_miss(void);
 extern FILE *fopen_exclusive(const char *filename); /* no mode, opens for write only */
 extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
-extern void print_elapsed_time(struct timeval *previous_time, struct timeval *current_time);
+extern void print_elapsed_time(const char *step, struct timeval *previous_time, struct timeval *current_time);
 extern int system_argv(char *const argv[]);
 
 extern bool signature_initialize(void);
