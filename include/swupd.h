@@ -252,7 +252,7 @@ extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
 extern void print_elapsed_time(const char *step, struct timeval *previous_time, struct timeval *current_time);
 extern int system_argv(char *const argv[]);
-extern int system_argv_fd(char *const argv[], int stdin, int stdout, int stderr);
+extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
 extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
 							char *const argvp2[], int stdoutp2, int stderrp2);
 

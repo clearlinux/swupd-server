@@ -153,7 +153,7 @@ int system_argv(char *const argv[])
 {
 	int child_exit_status;
 	pid_t pid;
-	int status;
+	int status = -1;
 
 	pid = fork();
 
@@ -186,31 +186,40 @@ int system_argv(char *const argv[])
 			LOG(NULL, "Failed to run command:", "%s", cmdline);
 			free(cmdline);
 		}
-
-		return status;
 	}
+
+	return status;
 }
 
-int system_argv_fd(char *const argv[], int stdin, int stdout, int stderr)
+int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr)
 {
 	int child_exit_status;
 	pid_t pid;
-	int status;
+	int status = -1;
 
 	pid = fork();
 
 	if (pid == 0) { /* child */
-		if(stdin >= 0) {
-			dup2(stdin, STDIN_FILENO);
-			close(stdin);
+		if(newstdin >= 0) {
+			if (dup2(newstdin, STDIN_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stdin", "");
+				assert(0);
+			}
+			close(newstdin);
 		}
-		if(stdout >= 0) {
-			dup2(stdout, STDOUT_FILENO);
-			close(stdout);
+		if(newstdout >= 0) {
+			if (dup2(newstdout, STDOUT_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stdout", "");
+				assert(0);
+			}
+			close(newstdout);
 		}
-		if(stderr >= 0) {
-			dup2(stderr, STDERR_FILENO);
-			close(stderr);
+		if(newstderr >= 0) {
+			if (dup2(newstderr, STDERR_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stderr", "");
+				assert(0);
+			}
+			close(newstderr);
 		}
 
 		execvp(*argv, argv);
@@ -241,9 +250,9 @@ int system_argv_fd(char *const argv[], int stdin, int stdout, int stderr)
 			LOG(NULL, "Failed to run command:", "%s", cmdline);
 			free(cmdline);
 		}
-
-		return status;
 	}
+
+	return status;
 }
 
 int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
