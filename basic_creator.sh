@@ -45,10 +45,6 @@ for job in $(jobs -p); do
 	fi
 done
 
-# create delta packs for 2 versions back
-NUM_PACKS=2
-${SWUPDREPO}/pack_maker.sh ${VER} ${NUM_PACKS}
-
 # expose the new build to staging / testing
 echo ${VER} > ${UPDATEDIR}/image/latest.version
 

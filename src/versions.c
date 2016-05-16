@@ -145,7 +145,19 @@ void write_cookiecrumbs_to_download_area(int version)
 	}
 	free(cmd);
 
-/* written from pack_maker.sh */
+/* Updating the WEBDIR/version/formatN/latest file is an operation very closely tied to a DevOps
+ * workflow and not something swupd should make a decision about.
+ *
+ * The supported format values (replacing the "N" in the path above) are:
+ *
+ * - "staging": intended for testing only
+ * - [1-+inf] (positive integer): the number that a corresponding version of swupd-client
+ *   understands to run software updates. For example, if a given swupd-client release understands
+ *   format 1, then WEBDIR/version/format1/latest contains the value of most recent release that
+ *   that swupd-client can update to.
+ *
+ * Adapt this step appropriately for your DevOps flow.
+ */
 #if 0
 	FILE *file;
 	char *fullfile = NULL;
