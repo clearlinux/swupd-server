@@ -115,12 +115,12 @@ void __create_delta(struct file *file, int from_version)
 	ret = system_argv(sanitycheck);
 	free(param1);
 	free(param2);
-	if (ret == -1 || !WIFEXITED(ret) || WEXITSTATUS(ret) == 2) {
+	if (ret == -1 || ret == 2) {
 		printf("Sanity check system command failed %i. \n", ret);
 		printf("%s->%s via diff %s yielded %s\n", original, newfile, dotfile, testnewfile);
 		assert(0);
 		goto out;
-	} else if (WEXITSTATUS(ret) == 1) {
+	} else if (ret == 1) {
 		printf("Delta application resulted in file mismatch %i. \n", ret);
 		printf("%s->%s via diff %s yielded %s\n", original, newfile, dotfile, testnewfile);
 		LOG(file, "Delta mismatch:", "%s->%s via diff %s yielded %s", original, newfile, dotfile, testnewfile);

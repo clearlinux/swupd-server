@@ -200,21 +200,21 @@ int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstder
 	pid = fork();
 
 	if (pid == 0) { /* child */
-		if(newstdin >= 0) {
+		if (newstdin >= 0) {
 			if (dup2(newstdin, STDIN_FILENO) == -1) {
 				LOG(NULL, "Could not redirect stdin", "");
 				assert(0);
 			}
 			close(newstdin);
 		}
-		if(newstdout >= 0) {
+		if (newstdout >= 0) {
 			if (dup2(newstdout, STDOUT_FILENO) == -1) {
 				LOG(NULL, "Could not redirect stdout", "");
 				assert(0);
 			}
 			close(newstdout);
 		}
-		if(newstderr >= 0) {
+		if (newstderr >= 0) {
 			if (dup2(newstderr, STDERR_FILENO) == -1) {
 				LOG(NULL, "Could not redirect stderr", "");
 				assert(0);
@@ -258,21 +258,21 @@ int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstder
 int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
 					 char *const argvp2[], int stdoutp2, int stderrp2)
 {
-	int statusp1, statusp2;
+	int statusp2;
 	int pipefd[2];
 
 	if (pipe(pipefd)) {
 		LOG(NULL, "Failed to create a pipe", "");
 		return -1;
 	}
-	statusp1 = system_argv_fd(argvp1, stdinp1, pipefd[1], stderrp1);
+	system_argv_fd(argvp1, stdinp1, pipefd[1], stderrp1);
 	close(pipefd[1]);
 	statusp2 = system_argv_fd(argvp2, pipefd[0], stdoutp2, stderrp2);
 	close(pipefd[0]);
 
 	/* Returns the status of the failed process if any
        If both processes failed returns the status of first one */
-	return statusp1 ? statusp1 : statusp2;
+	return statusp2;
 }
 
 void check_root(void)

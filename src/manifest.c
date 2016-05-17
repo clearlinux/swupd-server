@@ -841,7 +841,7 @@ static int write_manifest_tar(struct manifest *manifest)
 {
 	char *conf = config_output_dir();
 	char *directory, *manifesttar, *manifestcomp, *manifestsigned;
-	int ret = -1;
+	int ret = 0;
 
 	if (conf == NULL) {
 		assert(0);
@@ -867,7 +867,6 @@ static int write_manifest_tar(struct manifest *manifest)
 		fprintf(stderr, "Creation of Manifest.tar failed\n");
 	}
 
-exit:
 	free(directory);
 	free(manifesttar);
 	free(manifestcomp);

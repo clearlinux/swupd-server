@@ -128,7 +128,7 @@ void write_cookiecrumbs_to_download_area(int version)
 {
 	char *conf;
 	char *filename, *strformat;
-	int versionfd, formatfd;
+	FILE *versionfd, *formatfd;
 
 	conf = config_output_dir();
 	if (conf == NULL) {
@@ -136,26 +136,26 @@ void write_cookiecrumbs_to_download_area(int version)
 	}
 
 	string_or_die(&filename, "%s/%i/swupd-server-src-version", conf, version);
-	versionfd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0664);
-	if (versionfd == -1) {
+	versionfd = fopen(filename, "w");
+	if (versionfd == NULL) {
 		assert(0);
 	}
-	if (write(versionfd, VERSION, strlen(VERSION)) != strlen(VERSION)) {
+	if (fwrite(VERSION, 1, strlen(VERSION), versionfd) != strlen(VERSION)) {
 		assert(0);
 	}
-	close(versionfd);
+	fclose(versionfd);
 	free(filename);
 
 	string_or_die(&filename, "%s/%i/format", conf, version);
 	string_or_die(&strformat, "%llu", format);
-	formatfd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0664);
-	if (formatfd == -1) {
+	formatfd = fopen(filename, "w");
+	if (formatfd == NULL) {
 		assert(0);
 	}
-	if (write(formatfd, strformat, strlen(strformat)) != (ssize_t)strlen(strformat)) {
+	if (fwrite(strformat, 1, strlen(strformat), formatfd) != strlen(strformat)) {
 		assert(0);
 	}
-	close(formatfd);
+	fclose(formatfd);
 	free(filename);
 	free(strformat);
 
