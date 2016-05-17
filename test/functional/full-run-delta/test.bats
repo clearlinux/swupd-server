@@ -79,6 +79,11 @@ setup() {
   [[ 1 -eq $(grep '/foobarbaz$' $DIR/www/20/Manifest.included-nested | wc -l) ]]
   [[ 6 -eq $(tar -tf $DIR/www/10/pack-test-bundle-from-0.tar | wc -l) ]]
   [[ 4 -eq $(tar -tf $DIR/www/20/pack-test-bundle-from-0.tar | wc -l) ]]
+
+  # delta packs should contain appropriate delta manifests
+  [[ $(tar -tf $DIR/www/20/pack-os-core-from-10.tar | grep '^Manifest-os-core-delta-from-10') ]]
+  [[ $(tar -tf $DIR/www/20/pack-os-core-from-10.tar | grep '^Manifest-MoM-delta-from-10') ]]
+  [[ $(tar -tf $DIR/www/20/pack-test-bundle-from-10.tar | grep '^Manifest-test-bundle-delta-from-10') ]]
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80
