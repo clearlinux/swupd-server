@@ -158,10 +158,10 @@ bool signature_sign(const char *filename)
 	}
 	string_or_die(&param1, "%s.signed", filename);
 	string_or_die(&param2, "file:%s", passphrase);
-	char *const opensslcmd[] = { "openssl", "smime", "-sign", "-in", (char*)filename, "-binary",
-						   "-out",  param1, "-outform", " PEM", "-md", "sha256", "-inkey",
-						   leaf_key, "-signer", leaf_cert, "-certfile",  ca_chain_cert,
-						   "-passin", param2, NULL };
+	char *const opensslcmd[] = { "openssl", "smime", "-sign", "-in", (char *)filename, "-binary",
+				     "-out", param1, "-outform", " PEM", "-md", "sha256", "-inkey",
+				     leaf_key, "-signer", leaf_cert, "-certfile", ca_chain_cert,
+				     "-passin", param2, NULL };
 	status = system_argv(opensslcmd);
 	if (status != 0) {
 		printf("Bad status %d from signing command\n", status);

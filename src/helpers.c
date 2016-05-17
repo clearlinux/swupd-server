@@ -256,7 +256,7 @@ int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstder
 }
 
 int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
-					 char *const argvp2[], int stdoutp2, int stderrp2)
+		     char *const argvp2[], int stdoutp2, int stderrp2)
 {
 	int statusp2;
 	int pipefd[2];

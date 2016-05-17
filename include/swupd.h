@@ -254,7 +254,7 @@ extern void print_elapsed_time(const char *step, struct timeval *previous_time, 
 extern int system_argv(char *const argv[]);
 extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
 extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
-							char *const argvp2[], int stdoutp2, int stderrp2);
+			    char *const argvp2[], int stdoutp2, int stderrp2);
 
 extern bool signature_initialize(void);
 extern void signature_terminate(void);

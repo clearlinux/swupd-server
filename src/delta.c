@@ -111,7 +111,7 @@ void __create_delta(struct file *file, int from_version)
 
 	string_or_die(&param1, "%s", newfile);
 	string_or_die(&param2, "%s", testnewfile);
-	char *const sanitycheck[] = { "cmp", "-s", param1, param2, NULL};
+	char *const sanitycheck[] = { "cmp", "-s", param1, param2, NULL };
 	ret = system_argv(sanitycheck);
 	free(param1);
 	free(param2);

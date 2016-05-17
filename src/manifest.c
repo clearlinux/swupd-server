@@ -800,7 +800,7 @@ static int write_manifest_plain(struct manifest *manifest)
 		 * otherwise we may get incorrect hashes due to owner permissions on
 		 * the files. */
 		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf %s.tar 2> /dev/null",
-				manifest_tempdir, submanifest_filename);
+			      manifest_tempdir, submanifest_filename);
 		if (system(tarcommand) != 0) {
 			LOG(NULL, "Failed to run command:", "%s", tarcommand);
 			assert(0);
@@ -815,7 +815,7 @@ static int write_manifest_plain(struct manifest *manifest)
 		}
 		unlink(tempmanifest);
 		free(tempmanifest);
-write_entry:
+	write_entry:
 		fprintf(out, "%s\t%s\t%i\t%s\n", file_type_to_string(file), file->hash, file->last_change, file->filename);
 		free(submanifest_filename);
 	}
@@ -847,20 +847,20 @@ static int write_manifest_tar(struct manifest *manifest)
 		assert(0);
 	}
 
-	string_or_die(&directory, "--directory=%s/%i",  conf, manifest->version);
-	string_or_die(&manifesttar, "%s/%i/Manifest.%s.tar",  conf, manifest->version, manifest->component);
-	string_or_die(&manifestcomp, "Manifest.%s",  manifest->component);
-	string_or_die(&manifestsigned, "Manifest.%s.signed",  manifest->component);
+	string_or_die(&directory, "--directory=%s/%i", conf, manifest->version);
+	string_or_die(&manifesttar, "%s/%i/Manifest.%s.tar", conf, manifest->version, manifest->component);
+	string_or_die(&manifestcomp, "Manifest.%s", manifest->component);
+	string_or_die(&manifestsigned, "Manifest.%s.signed", manifest->component);
 
 	/* now, tar the thing up for efficient full file download */
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
 		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
-								 manifesttar, manifestcomp, manifestsigned, NULL};
+					 manifesttar, manifestcomp, manifestsigned, NULL };
 		ret = system_argv(tarcmd);
 	} else {
 		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
-								 manifesttar, manifestcomp, NULL};
+					 manifesttar, manifestcomp, NULL };
 		ret = system_argv(tarcmd);
 	}
 	if (ret) {

@@ -24,6 +24,7 @@
 #define _GNU_SOURCE
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <glib.h>
 #include <libgen.h>
 #include <stdint.h>
@@ -33,7 +34,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #include "swupd.h"
 
@@ -50,7 +50,7 @@ static void create_fullfile(struct file *file)
 	struct stat sbuf;
 	char *empty, *indir, *outdir;
 	char *param1, *param2;
-	int  stderrfd;
+	int stderrfd;
 
 	if (file->is_deleted) {
 		return; /* file got deleted -> by definition we cannot tar it up */
