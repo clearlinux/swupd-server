@@ -39,6 +39,9 @@
 
 #include "swupd.h"
 
+G_LOCK_DEFINE_STATIC(MOM);
+G_LOCK_DEFINE_STATIC(SUBTRACT);
+
 static void banner(void)
 {
 	printf(PACKAGE_NAME " update creator version " PACKAGE_VERSION "\n");
@@ -56,6 +59,16 @@ static const struct option prog_opts[] = {
 	{ "statedir", required_argument, 0, 'S' },
 	{ "signcontent", no_argument, 0, 's' },
 	{ 0, 0, 0, 0 }
+};
+
+struct manifest_data {
+	struct manifest *new_full;
+	struct manifest *old_core;
+	struct manifest *new_core;
+	struct manifest *new_MoM;
+	GHashTable *old_manifests;
+	GHashTable *new_manifests;
+	GList *manifests_last_versions_list;
 };
 
 static void print_help(const char *name)
@@ -212,6 +225,120 @@ static int check_build_env(void)
 	return 0;
 }
 
+static void process_bundle(struct manifest_data *manifests, char *group)
+{
+	struct manifest *oldm;
+	struct manifest *newm;
+	int old_deleted = 0;
+	int newfiles = 0;
+
+	printf("Processing bundle %s\n", group);
+	/* Step 4: Make a manifest for this functional group */
+	oldm = g_hash_table_lookup(manifests->old_manifests, group);
+	newm = g_hash_table_lookup(manifests->new_manifests, group);
+	add_component_hashes_to_manifest(newm, manifests->new_full);
+	apply_heuristics(oldm);
+	apply_heuristics(newm);
+	newm->prevversion = oldm->version;
+
+	/* add os-core as an included manifest */
+	if (!manifest_includes(oldm, "os-core")) {
+		oldm->includes = g_list_prepend(oldm->includes, manifests->old_core);
+	}
+	if (!manifest_includes(newm, "os-core")) {
+		newm->includes = g_list_prepend(newm->includes, manifests->new_core);
+	}
+
+	/* Step 5: Subtract the core files from the manifest */
+	G_LOCK(SUBTRACT);
+	subtract_manifests_frontend(oldm, oldm);
+	subtract_manifests_frontend(newm, newm);
+	G_UNLOCK(SUBTRACT);
+
+	/* Step 6: Compare manifest to the previous version... */
+	if (match_manifests(oldm, newm) == 0 && !changed_includes(oldm, newm)) {
+		LOG(NULL, "", "%s components have not changed, no new manifest", group);
+		printf("%s components have not changed, no new manifest\n", group);
+		/* Step 6a: if nothing changed, stay at the old version */
+		newm->version = oldm->version;
+	} else {
+		apply_heuristics(newm);
+#warning missing rename_detection here
+		old_deleted = remove_old_deleted_files(oldm, newm);
+		sort_manifest_by_version(newm);
+		type_change_detection(newm);
+		newfiles = prune_manifest(newm);
+		if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
+			LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
+			printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
+			if (write_manifest(newm) != 0) {
+				LOG(NULL, "", "%s component manifest write failed", group);
+				printf("%s component manifest write failed\n", group);
+				assert(0);
+			}
+			/* delta manifests will be created as a separate step. Since our pack creation
+			 * already creates a delta manifest, we can extend that functionality */
+			//create_manifest_deltas(newm, manifests->manifests_last_versions_list);
+		} else {
+			LOG(NULL, "", "%s component has not changed (after pruning), no new manifest", group);
+			printf("%s component has not changed (after pruning), no new manifest\n", group);
+			newm->version = oldm->version;
+		}
+	}
+	/* We have to lock to write to the MoM since there is only 1 copy of it */
+	G_LOCK(MOM);
+	nest_manifest(manifests->new_MoM, newm);
+	G_UNLOCK(MOM);
+}
+
+static void create_manifest_task(gpointer data, gpointer user_data)
+{
+	struct manifest_data *mlist = user_data;
+	char *group = data;
+	process_bundle(mlist, group);
+}
+
+static void submit_manifest_tasks(struct manifest_data *manifests)
+{
+	GThreadPool *threadpool;
+	int ret = 0;
+	int count = 0;
+	GError *err = NULL;
+	char *group;
+
+
+	printf("Manifest threadpool %ld threads\n", sysconf(_SC_NPROCESSORS_ONLN) * 3);
+	threadpool = g_thread_pool_new(create_manifest_task, manifests,
+					sysconf(_SC_NPROCESSORS_ONLN) * 3,
+					TRUE, NULL);
+
+	printf("Starting delta manifest creation\n");
+	group = next_group();
+	while(group != NULL) {
+		if (!group) {
+			break;
+		}
+
+		if (strcmp(group, "os-core") == 0) {
+			printf("skipping os-core, already did it\n");
+			group = next_group();
+			continue;
+		}
+
+		ret = g_thread_pool_push(threadpool, group, &err);
+		if (ret == FALSE) {
+			printf("GThread create_manifest_task push error\n");
+			printf("%s\n", err->message);
+			assert(0);
+		}
+		count++;
+		group = next_group();
+	}
+	printf("queued %i manifest creations\n", count);
+	printf("Waiting for manifest creation to finish\n");
+	g_thread_pool_free(threadpool, FALSE, TRUE);
+}
+
 int main(int argc, char **argv)
 {
 	struct manifest *new_core = NULL;
@@ -222,6 +349,8 @@ int main(int argc, char **argv)
 
 	struct manifest *old_full = NULL;
 	struct manifest *new_full = NULL;
+
+	struct manifest_data *manifests = malloc(sizeof(struct manifest_data));
 
 	GHashTable *new_manifests = g_hash_table_new(g_str_hash, g_str_equal);
 	GHashTable *old_manifests = g_hash_table_new(g_str_hash, g_str_equal);
@@ -401,73 +530,15 @@ int main(int argc, char **argv)
 		}
 		manifest->includes = manifest_includes;
 	}
-	while (1) {
-		char *group = next_group();
-		struct manifest *oldm;
-		struct manifest *newm;
 
-		if (!group) {
-			break;
-		}
-
-		if (strcmp(group, "os-core") == 0) {
-			continue;
-		}
-
-		printf("Processing bundle %s\n", group);
-
-		/* Step 4: Make a manifest for this functonal group */
-		oldm = g_hash_table_lookup(old_manifests, group);
-		newm = g_hash_table_lookup(new_manifests, group);
-		add_component_hashes_to_manifest(newm, new_full);
-		apply_heuristics(oldm);
-		apply_heuristics(newm);
-		newm->prevversion = oldm->version;
-
-		/* add os-core as an included manifest */
-		if (!manifest_includes(oldm, "os-core")) {
-			oldm->includes = g_list_prepend(oldm->includes, old_core);
-		}
-		if (!manifest_includes(newm, "os-core")) {
-			newm->includes = g_list_prepend(newm->includes, new_core);
-		}
-
-		/* Step 5: Subtract the core files from the manifest */
-		subtract_manifests_frontend(oldm, oldm);
-		subtract_manifests_frontend(newm, newm);
-
-		/* Step 6: Compare manifest to the previous version... */
-		if (match_manifests(oldm, newm) == 0 && !changed_includes(oldm, newm)) {
-			LOG(NULL, "", "%s components have not changed, no new manifest", group);
-			printf("%s components have not changed, no new manifest\n", group);
-			/* Step 6a: if nothing changed, stay at the old version */
-			newm->version = oldm->version;
-		} else {
-			apply_heuristics(newm);
-#warning missing rename_detection here
-			/* Step 6b: otherwise, write out the manifest */
-			old_deleted = remove_old_deleted_files(oldm, newm);
-			sort_manifest_by_version(newm);
-			type_change_detection(newm);
-			newfiles = prune_manifest(newm);
-			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
-				LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
-				printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
-				if (write_manifest(newm) != 0) {
-					LOG(NULL, "", "%s component manifest write failed", group);
-					printf("%s component manifest write failed\n", group);
-					goto exit;
-				}
-				create_manifest_deltas(newm, manifests_last_versions_list);
-			} else {
-				LOG(NULL, "", "%s component has not changed (after pruning), no new manifest", group);
-				printf("%s component has not changed (after pruning), no new manifest\n", group);
-				newm->version = oldm->version;
-			}
-		}
-
-		nest_manifest(new_MoM, newm);
-	}
+	manifests->new_full = new_full;
+	manifests->old_core = old_core;
+	manifests->new_core = new_core;
+	manifests->old_manifests = old_manifests;
+	manifests->new_manifests = new_manifests;
+	manifests->manifests_last_versions_list = manifests_last_versions_list;
+	manifests->new_MoM = new_MoM;
+	submit_manifest_tasks(manifests);
 
 	print_elapsed_time("bundle manifest creation", &previous_time, &current_time);
 

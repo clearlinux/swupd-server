@@ -481,7 +481,8 @@ struct manifest *sub_manifest_from_directory(char *component, int version)
 	return manifest;
 }
 
-/* get hashes out of full manifest and add them into the component manifest */
+/* Get hashes out of full manifest and add them into the component manifest.
+ * Full manifest must be sorted before calling this function to perform properly */
 void add_component_hashes_to_manifest(struct manifest *compm, struct manifest *fullm)
 {
 	GList *list1, *list2;
@@ -492,7 +493,9 @@ void add_component_hashes_to_manifest(struct manifest *compm, struct manifest *f
 	assert(fullm);
 
 	compm->files = g_list_sort(compm->files, file_sort_filename);
-	fullm->files = g_list_sort(fullm->files, file_sort_filename);
+	/* This is a destructive operation so it cannot be threaded easily,
+	 * but it is not needed at this point */
+//	fullm->files = g_list_sort(fullm->files, file_sort_filename);
 
 	list1 = g_list_first(compm->files);
 	list2 = g_list_first(fullm->files);
