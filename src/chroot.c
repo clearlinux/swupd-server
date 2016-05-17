@@ -34,9 +34,8 @@
 
 void chroot_create_full(int newversion)
 {
-	int ret;
 	char *group;
-	char *command;
+	char *param;
 	char *full_dir;
 
 	string_or_die(&full_dir, "%s/%i/full/", image_dir, newversion);
@@ -45,11 +44,12 @@ void chroot_create_full(int newversion)
 
 	/* start with base */
 	LOG(NULL, "Copying chroot os-core to full", "");
-	string_or_die(&command, "rsync -aAX %s/%i/os-core/ %s",
-		      image_dir, newversion, full_dir);
-	ret = system(command);
-	assert(ret == 0);
-	free(command);
+	string_or_die(&param, "%s/%i/os-core/", image_dir, newversion);
+	char *const rsynccmd[] = { "rsync", "-aAX", param, full_dir, NULL };
+	if (system_argv(rsynccmd) != 0) {
+		assert(0);
+	}
+	free(param);
 
 	/* overlay any new files from each group */
 	while (1) {
@@ -59,11 +59,12 @@ void chroot_create_full(int newversion)
 		}
 
 		LOG(NULL, "Overlaying bundle chroot onto full", "%s", group);
-		string_or_die(&command, "rsync -aAX --ignore-existing %s/%i/%s/ %s",
-			      image_dir, newversion, group, full_dir);
-		ret = system(command);
-		assert(ret == 0);
-		free(command);
+		string_or_die(&param, "%s/%i/%s/", image_dir, newversion, group);
+		char *const rsynccmd[] = { "rsync", "-aAX", "--ignore-existing", param, full_dir, NULL };
+		if (system_argv(rsynccmd) != 0) {
+			assert(0);
+		}
+		free(param);
 	}
 	free(full_dir);
 }

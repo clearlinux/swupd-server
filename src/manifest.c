@@ -840,34 +840,37 @@ exit:
 static int write_manifest_tar(struct manifest *manifest)
 {
 	char *conf = config_output_dir();
-	char *tarcmd = NULL;
-	int ret = -1;
+	char *directory, *manifesttar, *manifestcomp, *manifestsigned;
+	int ret = 0;
 
 	if (conf == NULL) {
 		assert(0);
 	}
 
+	string_or_die(&directory, "--directory=%s/%i",  conf, manifest->version);
+	string_or_die(&manifesttar, "%s/%i/Manifest.%s.tar",  conf, manifest->version, manifest->component);
+	string_or_die(&manifestcomp, "Manifest.%s",  manifest->component);
+	string_or_die(&manifestsigned, "Manifest.%s.signed",  manifest->component);
+
 	/* now, tar the thing up for efficient full file download */
 	/* and put the signature of the plain manifest into the archive, too */
 	if (enable_signing) {
-		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-						   "%s/%i/Manifest.%s.tar Manifest.%s Manifest.%s.signed",
-			      conf, manifest->version, conf, manifest->version, manifest->component,
-			      manifest->component, manifest->component);
+		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
+								 manifesttar, manifestcomp, manifestsigned, NULL};
+		ret = system_argv(tarcmd);
 	} else {
-		string_or_die(&tarcmd, TAR_COMMAND " --directory=%s/%i " TAR_PERM_ATTR_ARGS " -Jcf "
-						   "%s/%i/Manifest.%s.tar Manifest.%s",
-			      conf, manifest->version, conf, manifest->version, manifest->component,
-			      manifest->component);
+		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
+								 manifesttar, manifestcomp, NULL};
+		ret = system_argv(tarcmd);
+	}
+	if (ret) {
+		fprintf(stderr, "Creation of Manifest.tar failed\n");
 	}
 
-	if (system(tarcmd) != 0) {
-		fprintf(stderr, "Creation of Manifest.tar failed\n");
-		goto exit;
-	}
-	ret = 0;
-exit:
-	free(tarcmd);
+	free(directory);
+	free(manifesttar);
+	free(manifestcomp);
+	free(manifestsigned);
 	free(conf);
 	return ret;
 }

@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "swupd.h"
 
@@ -126,24 +127,37 @@ void ensure_version_image_exists(int version)
 void write_cookiecrumbs_to_download_area(int version)
 {
 	char *conf;
-	char *cmd;
+	char *filename, *strformat;
+	FILE *versionfd, *formatfd;
 
 	conf = config_output_dir();
 	if (conf == NULL) {
 		assert(0);
 	}
 
-	string_or_die(&cmd, "echo %s > %s/%i/swupd-server-src-version", VERSION, conf, version);
-	if (system(cmd) != 0) {
+	string_or_die(&filename, "%s/%i/swupd-server-src-version", conf, version);
+	versionfd = fopen(filename, "w");
+	if (versionfd == NULL) {
 		assert(0);
 	}
-	free(cmd);
+	if (fwrite(VERSION, 1, strlen(VERSION), versionfd) != strlen(VERSION)) {
+		assert(0);
+	}
+	fclose(versionfd);
+	free(filename);
 
-	string_or_die(&cmd, "echo %llu > %s/%i/format", format, conf, version);
-	if (system(cmd) != 0) {
+	string_or_die(&filename, "%s/%i/format", conf, version);
+	string_or_die(&strformat, "%llu", format);
+	formatfd = fopen(filename, "w");
+	if (formatfd == NULL) {
 		assert(0);
 	}
-	free(cmd);
+	if (fwrite(strformat, 1, strlen(strformat), formatfd) != strlen(strformat)) {
+		assert(0);
+	}
+	fclose(formatfd);
+	free(filename);
+	free(strformat);
 
 /* Updating the WEBDIR/version/formatN/latest file is an operation very closely tied to a DevOps
  * workflow and not something swupd should make a decision about.
@@ -161,12 +175,15 @@ void write_cookiecrumbs_to_download_area(int version)
 #if 0
 	FILE *file;
 	char *fullfile = NULL;
+	char *param;
 
-	string_or_die(&cmd, "mkdir -p %s/version/formatstaging/", conf);
-	if (system(cmd) != 0) {
+	string_or_die($param, "%s/version/formatstaging/", conf);
+	char *const mkdircmd[] = { "mkdir", "-p", param, NULL };
+
+	if (system_argv(mkdircmd) != 0) {
 		assert(0);
 	}
-	free(cmd);
+	free(param);
 
 	string_or_die(&fullfile, "%s/version/formatstaging/latest", conf);
 	file = fopen(fullfile, "w");

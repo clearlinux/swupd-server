@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "swupd.h"
 
@@ -41,7 +42,6 @@
 static void create_fullfile(struct file *file)
 {
 	char *origin;
-	char *tarcommand = NULL;
 	char *tarname = NULL;
 	char *rename_source = NULL;
 	char *rename_target = NULL;
@@ -49,6 +49,8 @@ static void create_fullfile(struct file *file)
 	int ret;
 	struct stat sbuf;
 	char *empty, *indir, *outdir;
+	char *param1, *param2;
+	int  stderrfd;
 
 	if (file->is_deleted) {
 		return; /* file got deleted -> by definition we cannot tar it up */
@@ -91,13 +93,22 @@ static void create_fullfile(struct file *file)
 			assert(0);
 		}
 
-		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -cf - --exclude='%s/?*' './%s' 2> /dev/null | " TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf - 2> /dev/null",
-			      dir, base, base, rename_tmpdir);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "--exclude=%s/?*", base);
+		string_or_die(&param2, "./%s", base);
+		char *const tarcfcmd[] = { TAR_COMMAND, "-C", dir, TAR_PERM_ATTR_ARGS_STRLIST, "-cf", "-", param1, param2, NULL };
+		char *const tarxfcmd[] = { TAR_COMMAND, "-C", rename_tmpdir, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", "-", NULL };
+
+		stderrfd = open("/dev/null", O_WRONLY);
+		if (stderrfd == -1) {
+			LOG(NULL, "Failed to open /dev/null", "");
 			assert(0);
 		}
-		free(tarcommand);
+		if (system_argv_pipe(tarcfcmd, -1, stderrfd, tarxfcmd, -1, stderrfd) != 0) {
+			assert(0);
+		}
+		free(param1);
+		free(param2);
+		close(stderrfd);
 
 		string_or_die(&rename_source, "%s/%s", rename_tmpdir, base);
 		string_or_die(&rename_target, "%s/%s", rename_tmpdir, file->hash);
@@ -108,13 +119,13 @@ static void create_fullfile(struct file *file)
 		free(rename_source);
 
 		/* for a directory file, tar up simply with gzip */
-		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar %s",
-			      rename_tmpdir, outdir, file->last_change, file->hash, file->hash);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "%s/%i/files/%s.tar", outdir, file->last_change, file->hash);
+		char *const tarcmd[] = { TAR_COMMAND, "-C", rename_tmpdir, TAR_PERM_ATTR_ARGS_STRLIST, "-zcf", param1, file->hash, NULL };
+
+		if (system_argv(tarcmd) != 0) {
 			assert(0);
 		}
-		free(tarcommand);
+		free(param1);
 
 		if (rmdir(rename_target)) {
 			LOG(NULL, "rmdir failed for %s", rename_target);
@@ -144,29 +155,38 @@ static void create_fullfile(struct file *file)
 
 		/* step 2a: tar it with each compression type  */
 		// lzma
-		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -Jcf %s/%i/files/%s.tar.xz %s",
-			      empty, outdir, file->last_change, file->hash, file->hash);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "--directory=%s", empty);
+		string_or_die(&param2, "%s/%i/files/%s.tar.xz", outdir, file->last_change, file->hash);
+		char *const tarlzmacmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf", param2, file->hash, NULL };
+
+		if (system_argv(tarlzmacmd) != 0) {
 			assert(0);
 		}
-		free(tarcommand);
+		free(param1);
+		free(param2);
+
 		// gzip
-		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -zcf %s/%i/files/%s.tar.gz %s",
-			      empty, outdir, file->last_change, file->hash, file->hash);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "--directory=%s", empty);
+		string_or_die(&param2, "%s/%i/files/%s.tar.gz", outdir, file->last_change, file->hash);
+		char *const targzipcmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-zcf", param2, file->hash, NULL };
+
+		if (system_argv(targzipcmd) != 0) {
 			assert(0);
 		}
-		free(tarcommand);
+		free(param1);
+		free(param2);
+
 #ifdef SWUPD_WITH_BZIP2
-		string_or_die(&tarcommand, TAR_COMMAND " --directory=%s " TAR_PERM_ATTR_ARGS " -jcf %s/%i/files/%s.tar.bz2 %s",
-			      empty, outdir, file->last_change, file->hash, file->hash);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "--directory=%s", empty);
+		string_or_die(&param2, "%s/%i/files/%s.tar.bz2", outdir, file->last_change, file->hash);
+		char *const tarbzip2cmd[] = { TAR_COMMAND, param1, TAR_PERM_ATTR_ARGS_STRLIST, "-jcf", param2, file->hash, NULL };
+
+		if (system_argv(tarbzip2cmd) != 0) {
 			assert(0);
 		}
-		free(tarcommand);
+		free(param1);
+		free(param2);
+
 #endif
 
 		/* step 2b: pick the smallest of the three compression formats */
@@ -302,17 +322,14 @@ void create_fullfiles(struct manifest *manifest)
 {
 	GList *deduped_file_list;
 	char *path;
-	char *cmd;
 	char *conf, *empty;
 
 	empty = config_empty_dir();
 
-	string_or_die(&cmd, "rm -rf %s", empty);
-	if (system(cmd) != 0) {
-		LOG(NULL, "Failed to run command:", "%s", cmd);
+	char *const rmcmd[] = { "rm", "-rf", empty, NULL };
+	if (system_argv(rmcmd) != 0) {
 		assert(0);
 	}
-	free(cmd);
 	g_mkdir_with_parents(empty, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	free(empty);
 

@@ -153,7 +153,7 @@ int system_argv(char *const argv[])
 {
 	int child_exit_status;
 	pid_t pid;
-	int status;
+	int status = -1;
 
 	pid = fork();
 
@@ -186,9 +186,93 @@ int system_argv(char *const argv[])
 			LOG(NULL, "Failed to run command:", "%s", cmdline);
 			free(cmdline);
 		}
-
-		return status;
 	}
+
+	return status;
+}
+
+int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr)
+{
+	int child_exit_status;
+	pid_t pid;
+	int status = -1;
+
+	pid = fork();
+
+	if (pid == 0) { /* child */
+		if (newstdin >= 0) {
+			if (dup2(newstdin, STDIN_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stdin", "");
+				assert(0);
+			}
+			close(newstdin);
+		}
+		if (newstdout >= 0) {
+			if (dup2(newstdout, STDOUT_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stdout", "");
+				assert(0);
+			}
+			close(newstdout);
+		}
+		if (newstderr >= 0) {
+			if (dup2(newstderr, STDERR_FILENO) == -1) {
+				LOG(NULL, "Could not redirect stderr", "");
+				assert(0);
+			}
+			close(newstderr);
+		}
+
+		execvp(*argv, argv);
+		LOG(NULL, "This line must not be reached", "");
+		assert(0);
+	} else if (pid < 0) {
+		LOG(NULL, "Failed to fork a child process", "");
+		assert(0);
+	} else {
+		pid_t ws = waitpid(pid, &child_exit_status, 0);
+
+		if (ws == -1) {
+			LOG(NULL, "Failed to wait for child process", "");
+			assert(0);
+		}
+
+		if (WIFEXITED(child_exit_status)) {
+			status = WEXITSTATUS(child_exit_status);
+		} else {
+			LOG(NULL, "Child process didn't exit", "");
+			assert(0);
+		}
+
+		if (status != 0) {
+			char *cmdline = NULL;
+
+			concat_str_array(&cmdline, argv);
+			LOG(NULL, "Failed to run command:", "%s", cmdline);
+			free(cmdline);
+		}
+	}
+
+	return status;
+}
+
+int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
+					 char *const argvp2[], int stdoutp2, int stderrp2)
+{
+	int statusp2;
+	int pipefd[2];
+
+	if (pipe(pipefd)) {
+		LOG(NULL, "Failed to create a pipe", "");
+		return -1;
+	}
+	system_argv_fd(argvp1, stdinp1, pipefd[1], stderrp1);
+	close(pipefd[1]);
+	statusp2 = system_argv_fd(argvp2, pipefd[0], stdoutp2, stderrp2);
+	close(pipefd[0]);
+
+	/* Returns the status of the failed process if any
+       If both processes failed returns the status of first one */
+	return statusp2;
 }
 
 void check_root(void)
