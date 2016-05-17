@@ -456,7 +456,7 @@ static int make_final_pack(struct packdata *pack)
 
 		ret = link(from, to);
 		if (ret) {
-			LOG(NULL, "Failed to link", "Manifest-delta-from-%i", pack->from);
+			LOG(NULL, "Failed to link", "Manifest-%s-delta-from-%i (%s)", pack->module, pack->from, strerror(errno));
 		} else {
 			string_or_die(&bundle_delta, "Manifest-%s-delta-from-%i", pack->module, pack->from);
 		}
@@ -485,7 +485,7 @@ static int make_final_pack(struct packdata *pack)
 
 		ret = link(from, to);
 		if (ret) {
-			LOG(NULL, "Failed to link", "Manifest-delta-from-%i", pack->from);
+			LOG(NULL, "Failed to link", "Manifest-MoM-delta-from-%i (%s)", pack->from, strerror(errno));
 		} else {
 			string_or_die(&mom_delta, "Manifest-MoM-delta-from-%i", pack->from);
 		}
