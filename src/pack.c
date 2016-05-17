@@ -435,6 +435,8 @@ static int make_final_pack(struct packdata *pack)
 		explode_pack_stage(pack->from, pack->to, pack->module);
 	}
 
+	char *bundle_delta = NULL;
+
 	/* now... link in the Manifest pack */
 	if (pack->from != 0) {
 		char *from, *to;
@@ -455,11 +457,15 @@ static int make_final_pack(struct packdata *pack)
 		ret = link(from, to);
 		if (ret) {
 			LOG(NULL, "Failed to link", "Manifest-delta-from-%i", pack->from);
+		} else {
+			string_or_die(&bundle_delta, "Manifest-%s-delta-from-%i", pack->module, pack->from);
 		}
 
 		free(from);
 		free(to);
 	}
+
+	char *mom_delta = NULL;
 
 	/* now... link in the MoM Manifest into the os-core pack */
 	if ((pack->from != 0) && (strcmp(pack->module, "os-core") == 0)) {
@@ -480,6 +486,8 @@ static int make_final_pack(struct packdata *pack)
 		ret = link(from, to);
 		if (ret) {
 			LOG(NULL, "Failed to link", "Manifest-delta-from-%i", pack->from);
+		} else {
+			string_or_die(&mom_delta, "Manifest-MoM-delta-from-%i", pack->from);
 		}
 
 		free(from);
@@ -490,7 +498,7 @@ static int make_final_pack(struct packdata *pack)
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
 	string_or_die(&param1, "%s/%s/%i_to_%i/", packstage_dir, pack->module, pack->from, pack->to);
 	string_or_die(&param2, "%s/%i/pack-%s-from-%i.tar", staging_dir, pack->to, pack->module, pack->from);
-	char *const tarcmd[] = { TAR_COMMAND, "-C", param1, TAR_PERM_ATTR_ARGS_STRLIST, "--numeric-owner", "-Jcf", param2, "delta", "staged", NULL };
+	char *const tarcmd[] = { TAR_COMMAND, "-C", param1, TAR_PERM_ATTR_ARGS_STRLIST, "--numeric-owner", "-Jcf", param2, "delta", "staged", bundle_delta, mom_delta, NULL };
 	ret = system_argv(tarcmd);
 	free(param1);
 	free(param2);
