@@ -115,8 +115,8 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 		 * the resulting pack is slightly smaller, and in addition, we're saving CPU
 		 * time on the client...
 		 */
-		string_or_die(&param, "--directory=%s/%s/%i_to_%i/staged", packstage_dir, module, from_version, to_version);
-		char *const tarcmd[] = { TAR_COMMAND, param, TAR_WARN_ARGS, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", path, NULL };
+		string_or_die(&param, "%s/%s/%i_to_%i/staged", packstage_dir, module, from_version, to_version);
+		char *const tarcmd[] = { TAR_COMMAND, "-C", param, TAR_WARN_ARGS, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", path, NULL };
 		if (system_argv(tarcmd) == 0) {
 			unlink(path);
 		}
@@ -488,9 +488,9 @@ static int make_final_pack(struct packdata *pack)
 
 	/* tar the staging directory up */
 	LOG(NULL, "starting tar for pack", "%s: %i to %i", pack->module, pack->from, pack->to);
-	string_or_die(&param1, "--directory=%s/%s/%i_to_%i/", packstage_dir, pack->module, pack->from, pack->to);
+	string_or_die(&param1, "%s/%s/%i_to_%i/", packstage_dir, pack->module, pack->from, pack->to);
 	string_or_die(&param2, "%s/%i/pack-%s-from-%i.tar", staging_dir, pack->to, pack->module, pack->from);
-	char *const tarcmd[] = { TAR_COMMAND, TAR_PERM_ATTR_ARGS_STRLIST, param1, "--numeric-owner", "-Jcf", param2, "delta", "staged", NULL };
+	char *const tarcmd[] = { TAR_COMMAND, "-C", param1, TAR_PERM_ATTR_ARGS_STRLIST, "--numeric-owner", "-Jcf", param2, "delta", "staged", NULL };
 	ret = system_argv(tarcmd);
 	free(param1);
 	free(param2);
