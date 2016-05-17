@@ -730,7 +730,6 @@ static int write_manifest_plain(struct manifest *manifest)
 	char *filename = NULL;
 	char *submanifest_filename = NULL;
 	char *manifest_tempdir = NULL;
-	char *tarcommand = NULL;
 	char *tempmanifest = NULL;
 	int ret = -1;
 
@@ -796,16 +795,22 @@ static int write_manifest_plain(struct manifest *manifest)
 			goto write_entry;
 		}
 
+		char *param1, *param2;
+
 		/* Untar the Manifest.BUNDLE.tar and calculate the hash on that,
 		 * otherwise we may get incorrect hashes due to owner permissions on
 		 * the files. */
-		string_or_die(&tarcommand, TAR_COMMAND " -C %s " TAR_PERM_ATTR_ARGS " -xf %s.tar 2> /dev/null",
-			      manifest_tempdir, submanifest_filename);
-		if (system(tarcommand) != 0) {
-			LOG(NULL, "Failed to run command:", "%s", tarcommand);
+		string_or_die(&param1, "%s", manifest_tempdir);
+		string_or_die(&param2, "%s.tar", submanifest_filename);
+		char *const tarcmd[] = { TAR_COMMAND, "-C", param1, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", param2, NULL };
+		ret = system_argv(tarcmd);
+		free(param1);
+		free(param2);
+
+		if (ret != 0) {
 			assert(0);
 		}
-		free(tarcommand);
+
 		string_or_die(&tempmanifest, "%s/Manifest.%s", manifest_tempdir, file->filename);
 		populate_file_struct(file, tempmanifest);
 		ret = compute_hash(file, tempmanifest);
