@@ -461,7 +461,7 @@ static int make_final_pack(struct packdata *pack)
 		free(to);
 	}
 
-	/* now... link in the MoM Manifest into the base pack */
+	/* now... link in the MoM Manifest into the os-core pack */
 	if ((pack->from != 0) && (strcmp(pack->module, "os-core") == 0)) {
 		char *from, *to;
 		struct stat st;
