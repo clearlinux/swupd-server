@@ -101,7 +101,7 @@ void string_or_die(char **strp, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	if (vasprintf(strp, fmt, ap) <= 0) {
+	if (vasprintf(strp, fmt, ap) < 0) {
 		assert(0);
 	}
 	va_end(ap);
