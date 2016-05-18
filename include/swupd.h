@@ -36,6 +36,8 @@
 #define TAR_PERM_ATTR_ARGS_STRLIST TAR_XATTR_ARGS_STRLIST "--preserve-permissions"
 #endif
 
+#define SWUPD_HASH_DIRNAME "DIRECTORY"
+
 #if SWUPD_WITH_STATELESS
 #define OS_IS_STATELESS 1
 #else
