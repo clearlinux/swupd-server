@@ -39,6 +39,8 @@
 
 #include "swupd.h"
 
+#define NUM_THREADS (sysconf(_SC_NPROCESSORS_ONLN) * 3)
+
 G_LOCK_DEFINE_STATIC(MOM);
 G_LOCK_DEFINE_STATIC(SUBTRACT);
 
@@ -307,14 +309,13 @@ static void submit_manifest_tasks(struct manifest_data *manifests)
 	char *group;
 
 
-	printf("Manifest threadpool %ld threads\n", sysconf(_SC_NPROCESSORS_ONLN) * 3);
+	printf("Manifest threadpool %ld threads\n", NUM_THREADS);
 	threadpool = g_thread_pool_new(create_manifest_task, manifests,
-					sysconf(_SC_NPROCESSORS_ONLN) * 3,
-					TRUE, NULL);
+					NUM_THREADS, TRUE, NULL);
 
-	printf("Starting delta manifest creation\n");
+	printf("Starting manifest creation\n");
 	group = next_group();
-	while(group != NULL) {
+	while (group != NULL) {
 		if (!group) {
 			break;
 		}
@@ -486,7 +487,6 @@ int main(int argc, char **argv)
 			printf("Core component manifest write failed\n");
 			goto exit;
 		}
-		create_manifest_deltas(new_core, manifests_last_versions_list);
 	}
 
 	nest_manifest(new_MoM, new_core);
