@@ -321,7 +321,6 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 	while (dir) {
 		struct file *file;
 		char *sub_filename;
-		char *fullname;
 
 		entry = readdir(dir);
 		if (!entry) {
@@ -349,12 +348,22 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		file->last_change = manifest->version;
 		file->filename = sub_filename;
 
-		string_or_die(&fullname, "%s/%s", fullpath, entry->d_name);
-		populate_file_struct(file, fullname);
-		free(fullname);
-
 		if (entry->d_type == DT_DIR) {
 			iterate_directory(manifest, pathprefix, file->filename, do_hash);
+		} else if (entry->d_type == DT_UNKNOWN) { /* fall back to lstat() */
+			struct stat sb;
+			char *fullname;
+
+			string_or_die(&fullname, "%s/%s", fullpath, entry->d_name);
+			if (lstat(fullname, &sb) == -1) {
+				perror("lstat");
+				assert(0);
+			}
+			free(fullname);
+
+			if (S_ISDIR(sb.st_mode)) {
+				iterate_directory(manifest, pathprefix, file->filename, do_hash);
+			}
 		}
 
 		/* if for some reason there is a file in the official build
