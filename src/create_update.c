@@ -212,6 +212,25 @@ static int check_build_env(void)
 	return 0;
 }
 
+static int check_group_file(void)
+{
+	int ret = -1;
+
+	// Ensure the os-core group is defined
+	while (1) {
+		char *group = next_group();
+		if (!group) {
+			break;
+		}
+		if (strcmp(group, "os-core") == 0) {
+			ret = 0;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 int main(int argc, char **argv)
 {
 	struct manifest *new_core = NULL;
@@ -270,6 +289,11 @@ int main(int argc, char **argv)
 	string_or_die(&file_path, "%s/groups.ini", state_dir);
 	read_group_file(file_path);
 	free(file_path);
+	ret = check_group_file();
+	if (ret != 0) {
+		printf("os-core bundle is not listed in groups.ini, this is required.\n");
+		goto exit;
+	}
 
 	read_current_version("LAST_VER");
 	printf("Last processed version is %i\n", current_version);
