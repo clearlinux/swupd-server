@@ -357,7 +357,6 @@ int main(int argc, char **argv)
 			printf("Core component manifest write failed\n");
 			goto exit;
 		}
-		create_manifest_deltas(new_core, manifests_last_versions_list);
 	}
 
 	nest_manifest(new_MoM, new_core);
@@ -458,7 +457,6 @@ int main(int argc, char **argv)
 					printf("%s component manifest write failed\n", group);
 					goto exit;
 				}
-				create_manifest_deltas(newm, manifests_last_versions_list);
 			} else {
 				LOG(NULL, "", "%s component has not changed (after pruning), no new manifest", group);
 				printf("%s component has not changed (after pruning), no new manifest\n", group);
@@ -480,7 +478,6 @@ int main(int argc, char **argv)
 		printf("Failed to write new MoM\n");
 		goto exit;
 	}
-	create_manifest_deltas(new_MoM, manifests_last_versions_list);
 
 	print_elapsed_time("MoM creation", &previous_time, &current_time);
 
