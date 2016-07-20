@@ -827,11 +827,12 @@ static int write_manifest_plain(struct manifest *manifest)
 
 	ret = 0;
 exit:
-	if (rmdir(manifest_tempdir) != 0) {
-		LOG(NULL, "rmdir failed for %s: %s", manifest_tempdir, strerror(errno));
+	if (manifest_tempdir) {
+		if (rmdir(manifest_tempdir) != 0) {
+			LOG(NULL, "rmdir failed for %s: %s", manifest_tempdir, strerror(errno));
+		}
+		free(manifest_tempdir);
 	}
-	free(manifest_tempdir);
-
 	if (out) {
 		fclose(out);
 	}
