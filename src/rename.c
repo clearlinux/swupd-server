@@ -122,12 +122,10 @@ double rename_score(struct file *old, struct file *new)
 	return score;
 }
 
-static void precompute_file_data(struct manifest *manifest, struct file *file, int old_rename, GList *last_versions_list)
+static void precompute_file_data(struct manifest *manifest, struct file *file)
 {
-	GList *item;
 	char *c1, *c2;
 	char *filename = NULL;
-	int last_change;
 	struct stat buf;
 
 	/* fill in the filename-minus-the-numbers field */
@@ -151,18 +149,6 @@ static void precompute_file_data(struct manifest *manifest, struct file *file, i
 
 	if (manifest) {
 		string_or_die(&filename, "%s/%i/%s/%s", image_dir, manifest->version, manifest->component, file->filename);
-	} else if (old_rename) {
-		item = g_list_first(last_versions_list);
-		while (item) {
-			last_change = GPOINTER_TO_INT(item->data);
-			item = g_list_next(item);
-
-			free(filename);
-			string_or_die(&filename, "%s/%i/full/%s", image_dir, last_change, file->filename);
-			if (!lstat(filename, &buf)) {
-				break;
-			}
-		}
 	} else {
 		string_or_die(&filename, "%s/%i/full/%s", image_dir, file->last_change, file->filename);
 	}
@@ -246,18 +232,13 @@ static void score_file(GList *deleted_files, struct file *file)
 	}
 }
 
-void rename_detection(struct manifest *manifest, int last_change, GList *last_versions_list)
+void rename_detection(struct manifest *manifest)
 {
 	GList *new_files = NULL;
 	GList *deleted_files = NULL;
 
 	GList *list;
 	struct file *file;
-	int old_rename = 0;
-
-	if (last_change != manifest->version) {
-		old_rename = 1;
-	}
 
 	if (mcookie == NULL) {
 		mcookie = magic_open(MAGIC_NO_CHECK_COMPRESS);
@@ -277,7 +258,7 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 		}
 
 		new_files = g_list_prepend(new_files, file);
-		precompute_file_data(manifest, file, old_rename, last_versions_list);
+		precompute_file_data(manifest, file);
 	}
 
 	/* if there are no new files, we're not having any renames -- early exit */
@@ -293,13 +274,13 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 		list = g_list_next(list);
 		if ((!file->is_deleted) ||
 		    (!file->peer) ||
-		    (file->last_change != last_change) ||
+		    (file->last_change != manifest->version) ||
 		    (file->peer->is_dir || file->peer->is_link)) {
 			continue;
 		}
 
 		deleted_files = g_list_prepend(deleted_files, file);
-		precompute_file_data(NULL, file->peer, old_rename, last_versions_list);
+		precompute_file_data(NULL, file->peer);
 	}
 
 	/* nothing got deleted --> no renames --> early exit */
@@ -364,28 +345,7 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 	g_list_free(deleted_files);
 }
 
-static int file_found_in_older_manifest(struct manifest *from_manifest, struct file *searched_file)
-{
-	GList *list;
-	struct file *file;
-
-	list = g_list_first(from_manifest->files);
-	while (list) {
-		file = list->data;
-		list = g_list_next(list);
-
-		if (file->is_deleted) {
-			continue;
-		}
-		if (!strcmp(file->filename, searched_file->filename)) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-void link_renames(GList *newfiles, struct manifest *from_manifest)
+void link_renames(GList *newfiles, int to_version)
 {
 	GList *list1, *list2;
 	GList *targets;
@@ -413,7 +373,7 @@ void link_renames(GList *newfiles, struct manifest *from_manifest)
 
 			if ((!file2->peer || !file2->is_rename) ||
 			    (!file2->is_deleted) ||
-			    (!file_found_in_older_manifest(from_manifest, file2))) {
+			    (file2->last_change != to_version)) {
 				continue;
 			}
 			if (hash_compare(file2->hash, file1->hash)) {
@@ -424,5 +384,4 @@ void link_renames(GList *newfiles, struct manifest *from_manifest)
 			}
 		}
 	}
-	free(from_manifest);
 }
