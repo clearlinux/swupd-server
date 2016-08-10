@@ -187,8 +187,8 @@ static void precompute_file_data(struct manifest *manifest, struct file *file)
 
 	free(filename);
 
-	file->basename = strdup(basename(file->filename));
-	file->dirname = strdup(dirname(file->filename));
+	file->basename = g_path_get_basename(file->filename);
+	file->dirname = g_path_get_dirname(file->filename);
 }
 
 int file_sort_score(gconstpointer a, gconstpointer b)
