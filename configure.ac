@@ -82,6 +82,10 @@ AS_IF([test "$enable_lzma" != "no"], [
 ])
 AM_CONDITIONAL([ENABLE_LZMA], [test "$enable_lzma" != "no"])
 
+AC_ARG_ENABLE([rename-detection], [AS_HELP_STRING([--enable-rename-detection], [enable rename detection feature])])
+
+AS_IF([test "$enable_rename_detection" = "yes"], [AC_DEFINE(RENAMES,1,[Use rename detection])])
+
 AC_CONFIG_FILES([Makefile])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_OUTPUT

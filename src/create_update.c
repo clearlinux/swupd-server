@@ -363,8 +363,10 @@ int main(int argc, char **argv)
 		apply_heuristics(new_core);
 		/* Step 3c: ... else save the manifest */
 		type_change_detection(new_core);
+#ifdef RENAMES
 		/* Detect renamed files specifically for os-core */
 		rename_detection(new_core);
+#endif
 		old_deleted = remove_old_deleted_files(old_core, new_core);
 		sort_manifest_by_version(new_core);
 		newfiles = prune_manifest(new_core);
@@ -481,8 +483,10 @@ int main(int argc, char **argv)
 			newm->version = oldm->version;
 		} else {
 			apply_heuristics(newm);
+#ifdef RENAMES
 			/* Detect renamed files specifically for this bundle */
 			rename_detection(newm);
+#endif
 			/* Step 6b: otherwise, write out the manifest */
 			old_deleted = remove_old_deleted_files(oldm, newm);
 			sort_manifest_by_version(newm);
