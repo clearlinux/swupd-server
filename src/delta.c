@@ -35,9 +35,9 @@
 #include "swupd.h"
 #include "xattrs.h"
 
-void __create_delta(struct file *file, int from_version)
+void __create_delta(struct file *file, int from_version, char *from_hash)
 {
-	char *original, *newfile, *outfile, *dotfile, *testnewfile;
+	char *original, *newfile, *outfile, *dotfile, *testnewfile, *sanitycheck;
 	char *conf, *param1, *param2;
 	int ret;
 
@@ -62,9 +62,10 @@ void __create_delta(struct file *file, int from_version)
 
 	conf = config_output_dir();
 
-	string_or_die(&outfile, "%s/%i/delta/%i-%i-%s", conf, file->last_change, from_version, file->last_change, file->hash);
-	string_or_die(&dotfile, "%s/%i/delta/.%i-%i-%s", conf, file->last_change, from_version, file->last_change, file->hash);
-	string_or_die(&testnewfile, "%s/%i/delta/.%i-%i-%s.testnewfile", conf, file->last_change, from_version, file->last_change, file->hash);
+	string_or_die(&outfile, "%s/%i/delta/%i-%i-%s-%s", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
+	string_or_die(&dotfile, "%s/%i/delta/.%i-%i-%s-%s", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
+	string_or_die(&testnewfile, "%s/%i/delta/.%i-%i-%s-%s.testnewfile", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
+	string_or_die(&sanitycheck, "cmp -s \"%s\" \"%s\"", newfile, testnewfile);
 
 	LOG(file, "Making delta", "%s->%s", original, newfile);
 
@@ -111,7 +112,6 @@ void __create_delta(struct file *file, int from_version)
 
 	string_or_die(&param1, "%s", newfile);
 	string_or_die(&param2, "%s", testnewfile);
-	char *const sanitycheck[] = { "cmp", "-s", param1, param2, NULL };
 	ret = system_argv(sanitycheck);
 	free(param1);
 	free(param2);
