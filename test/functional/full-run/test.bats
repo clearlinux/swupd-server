@@ -39,7 +39,7 @@ setup() {
   [[ 1 -eq $(grep '/usr/share/clear$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 1 -eq $(grep '/usr/share/clear/bundles$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 4 -eq $(tar -tf $DIR/www/10/pack-test-bundle-from-0.tar | wc -l) ]]
-  [[ 9 -eq $(tar -tf $DIR/www/10/pack-os-core-from-0.tar | wc -l) ]]
+  [[ 5 -eq $(tar -tf $DIR/www/10/pack-os-core-from-0.tar | wc -l) ]]
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80
