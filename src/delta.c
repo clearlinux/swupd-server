@@ -37,8 +37,7 @@
 
 void __create_delta(struct file *file, int from_version, char *from_hash)
 {
-	char *original, *newfile, *outfile, *dotfile, *testnewfile, *sanitycheck;
-	char *conf, *param1, *param2;
+	char *original, *newfile, *outfile, *dotfile, *testnewfile, *conf;
 	int ret;
 
 	if (file->is_link) {
@@ -65,7 +64,6 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 	string_or_die(&outfile, "%s/%i/delta/%i-%i-%s-%s", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
 	string_or_die(&dotfile, "%s/%i/delta/.%i-%i-%s-%s", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
 	string_or_die(&testnewfile, "%s/%i/delta/.%i-%i-%s-%s.testnewfile", conf, file->last_change, from_version, file->last_change, from_hash, file->hash);
-	string_or_die(&sanitycheck, "cmp -s \"%s\" \"%s\"", newfile, testnewfile);
 
 	LOG(file, "Making delta", "%s->%s", original, newfile);
 
@@ -110,11 +108,8 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 		goto out;
 	}
 
-	string_or_die(&param1, "%s", newfile);
-	string_or_die(&param2, "%s", testnewfile);
+	char *const sanitycheck[] = { "cmp", "-s", newfile, testnewfile, NULL };
 	ret = system_argv(sanitycheck);
-	free(param1);
-	free(param2);
 	if (ret == -1 || ret == 2) {
 		printf("Sanity check system command failed %i. \n", ret);
 		printf("%s->%s via diff %s yielded %s\n", original, newfile, dotfile, testnewfile);
