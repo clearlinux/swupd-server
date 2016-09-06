@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.66])
-AC_INIT(swupd-server, 3.2.6, timothy.c.pepper@linux.intel.com)
+AC_INIT(swupd-server, 3.2.7, timothy.c.pepper@linux.intel.com)
 AM_INIT_AUTOMAKE([foreign -Wall -W subdir-objects])
 AM_SILENT_RULES([yes])
 AC_PROG_CC
