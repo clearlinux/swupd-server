@@ -27,7 +27,11 @@ rm -f $SWUPD_GROUPS_INI
 
 for bundle in $(ls $BUNDLEREPO/bundles)
 do
+	status=$(awk -F: '/^# .STATUS/ {print $2}' $BUNDLEREPO/$bundle | tr -cd '[[:alnum:]]')
 	echo "[$bundle]" >> $SWUPD_GROUPS_INI
 	echo "group=$bundle" >> $SWUPD_GROUPS_INI
+	if [ -n "$status" ]; then
+		echo "status=$status" >> $SWUPD_GROUPS_INI
+	fi
 	echo "" >> $SWUPD_GROUPS_INI
 done

@@ -728,6 +728,7 @@ static int write_manifest_plain(struct manifest *manifest)
 	char *base = NULL, *dir;
 	char *conf = config_output_dir();
 	char *filename = NULL;
+	char *status = NULL;
 	char *submanifest_filename = NULL;
 	char *manifest_tempdir = NULL;
 	char *tempmanifest = NULL;
@@ -762,6 +763,10 @@ static int write_manifest_plain(struct manifest *manifest)
 	compute_content_size(manifest);
 	fprintf(out, "contentsize:\t%llu\n", (long long unsigned int)manifest->contentsize);
 	includes = manifest->includes;
+	status = group_status(manifest->component);
+	if (status) {
+		fprintf(out, "status:\t%s\n", status);
+	}
 	while (includes) {
 		struct manifest *sub = includes->data;
 		includes = g_list_next(includes);

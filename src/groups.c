@@ -51,6 +51,13 @@ char *group_groups(char *group)
 	return g_key_file_get_value(groupfile, group, "groups", NULL);
 }
 
+char *group_status(char *group)
+{
+	assert(groupfile != NULL);
+
+	return g_key_file_get_value(groupfile, group, "status", NULL);
+}
+
 void read_group_file(char *filename)
 {
 	GError *error = NULL;
