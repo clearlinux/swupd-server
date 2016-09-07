@@ -37,6 +37,7 @@ swupd_make_pack_SOURCES = \
 	src/config.c \
 	src/delta.c \
 	src/globals.c \
+	src/groups.c \
 	src/helpers.c \
 	src/log.c \
 	src/make_packs.c \
@@ -53,6 +54,7 @@ swupd_make_fullfiles_SOURCES = \
 	src/delta.c \
 	src/fullfiles.c \
 	src/globals.c \
+	src/groups.c \
 	src/helpers.c \
 	src/log.c \
 	src/make_fullfiles.c \

@@ -221,6 +221,7 @@ extern void read_group_file(char *filename);
 extern void release_group_file(void);
 extern char *group_groups(char *group);
 extern char *group_packages(char *group);
+extern char *group_status(char *group);
 extern char *next_group(void);
 
 extern void apply_heuristics(struct manifest *manifest);

@@ -35,6 +35,7 @@ init_groups_ini() {
     cat >> $DIR/groups.ini << EOF
 [$bundle]
 group=$bundle
+status=ACTIVE
 EOF
   done
 }
