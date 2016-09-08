@@ -146,7 +146,7 @@ static void populate_dirs(int version)
 	if ((access(newversiondir, F_OK | R_OK) != 0) && (version == 0)) {
 		char *latestpath = NULL;
 
-		string_or_die(&latestpath, "%s/latest.version", image_dir);
+		string_or_die(&latestpath, "%s/LAST_VER", image_dir);
 
 		printf("** %s does not exist... creating and populating\n", newversiondir);
 		if (mkdir(newversiondir, 0755) != 0) {
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 	read_group_file(file_path);
 	free(file_path);
 
-	read_current_version("latest.version");
+	read_current_version("LAST_VER");
 	printf("Last processed version is %i\n", current_version);
 
 	populate_dirs(newversion);
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
 exit:
 	if (exit_status == EXIT_SUCCESS) {
 		write_cookiecrumbs_to_download_area(newversion);
-		//write_new_version("latest.version", newversion);
+		//write_new_version("LAST_VER", newversion);
 	}
 	release_configuration_data();
 	release_group_file();
