@@ -116,7 +116,7 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 		 * time on the client...
 		 */
 		string_or_die(&param, "%s/%s/%i_to_%i/staged", packstage_dir, module, from_version, to_version);
-		char *const tarcmd[] = { TAR_COMMAND, "-C", param, TAR_WARN_ARGS, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", path, NULL };
+		char *const tarcmd[] = { TAR_COMMAND, "-C", param, TAR_WARN_ARGS_STRLIST TAR_PERM_ATTR_ARGS_STRLIST, "-xf", path, NULL };
 		if (system_argv(tarcmd) == 0) {
 			unlink(path);
 		}

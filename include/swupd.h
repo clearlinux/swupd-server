@@ -20,12 +20,12 @@
 #define TAR_COMMAND "bsdtar"
 #define TAR_XATTR_ARGS ""
 #define TAR_XATTR_ARGS_STRLIST
-#define TAR_WARN_ARGS ""
+#define TAR_WARN_ARGS_STRLIST
 #else
 #define TAR_COMMAND "tar"
 #define TAR_XATTR_ARGS "--xattrs --xattrs-include='*'"
 #define TAR_XATTR_ARGS_STRLIST "--xattrs", "--xattrs-include='*'",
-#define TAR_WARN_ARGS "--warning=no-timestamp"
+#define TAR_WARN_ARGS_STRLIST "--warning=no-timestamp",
 #endif
 
 #if SWUPD_WITH_SELINUX
