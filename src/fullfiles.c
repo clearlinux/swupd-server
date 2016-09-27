@@ -291,10 +291,13 @@ static void submit_fullfile_tasks(GList *files)
 	int ret;
 	int count = 0;
 	GError *err = NULL;
+	int numthreads = getenv("SWUPD_NUM_THREADS") ?
+		atoi(getenv("SWUPD_NUM_THREADS")) :
+		sysconf(_SC_NPROCESSORS_ONLN) * 3;
 
-	LOG(NULL, "fullfile threadpool", "%d threads", sysconf(_SC_NPROCESSORS_ONLN) * 3);
+	LOG(NULL, "fullfile threadpool", "%d threads", numthreads);
 	threadpool = g_thread_pool_new(create_fullfile_task, NULL,
-				       sysconf(_SC_NPROCESSORS_ONLN) * 3,
+				       numthreads,
 				       TRUE, NULL);
 
 	printf("Starting downloadable fullfiles data creation\n");

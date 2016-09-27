@@ -387,6 +387,9 @@ struct manifest *full_manifest_from_directory(int version)
 {
 	struct manifest *manifest;
 	char *dir;
+	int numthreads = getenv("SWUPD_NUM_THREADS") ?
+		atoi(getenv("SWUPD_NUM_THREADS")) :
+		sysconf(_SC_NPROCESSORS_ONLN);
 
 	LOG(NULL, "Computing hashes", "for %i/full", version);
 
@@ -394,7 +397,7 @@ struct manifest *full_manifest_from_directory(int version)
 
 	string_or_die(&dir, "%s/%i/full", image_dir, version);
 
-	threadpool = g_thread_pool_new(get_hash, dir, 12, FALSE, NULL);
+	threadpool = g_thread_pool_new(get_hash, dir, numthreads, FALSE, NULL);
 
 	iterate_directory(manifest, dir, "", true);
 

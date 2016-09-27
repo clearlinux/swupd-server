@@ -285,10 +285,13 @@ static void make_pack_deltas(GList *files)
 	struct file *file;
 	int ret;
 	GError *err = NULL;
+	int numthreads = getenv("SWUPD_NUM_THREADS") ?
+		atoi(getenv("SWUPD_NUM_THREADS")) :
+		sysconf(_SC_NPROCESSORS_ONLN);
 
-	LOG(NULL, "pack deltas threadpool", "%d threads", sysconf(_SC_NPROCESSORS_ONLN));
+	LOG(NULL, "pack deltas threadpool", "%d threads", numthreads);
 	threadpool = g_thread_pool_new(create_delta, NULL,
-				       sysconf(_SC_NPROCESSORS_ONLN), FALSE, NULL);
+				       numthreads, FALSE, NULL);
 
 	item = g_list_first(files);
 	while (item) {
