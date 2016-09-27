@@ -284,3 +284,28 @@ void check_root(void)
 		exit(EXIT_FAILURE);
 	}
 }
+
+int num_threads(float scaling)
+{
+	const char *var = getenv("SWUPD_NUM_THREADS");
+	int result = sysconf(_SC_NPROCESSORS_ONLN) * scaling;
+
+	if (var && *var) {
+		char *endptr;
+		long int value;
+
+		errno = 0;
+		value = strtol(var, &endptr, 0);
+
+		if ((errno != 0 && value == 0) || *endptr) {
+			LOG(NULL, "SWUPD_NUM_THREADS must be an integer", "%s", var);
+		} else if ((errno == ERANGE && (value == LONG_MAX || value == LONG_MIN)) ||
+			   value < 1 || value > INT_MAX) {
+			LOG(NULL, "SWUPD_NUM_THREADS out of range", "%s", var);
+		} else {
+			result = (int)value;
+		}
+	}
+
+	return result;
+}
