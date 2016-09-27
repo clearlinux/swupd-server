@@ -72,7 +72,7 @@ static void create_fullfile(struct file *file)
 	string_or_die(&origin, "%s/%i/full/%s", indir, file->last_change, file->filename);
 	if (lstat(origin, &sbuf) < 0) {
 		/* no input file: means earlier phase of update creation failed */
-		LOG(NULL, "Failed to stat %s\n", origin);
+		LOG(NULL, "Failed to stat", "%s: %s", origin, strerror(errno));
 		assert(0);
 	}
 
