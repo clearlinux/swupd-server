@@ -475,6 +475,7 @@ struct manifest *full_manifest_from_directory(int version)
 {
 	struct manifest *manifest;
 	char *dir;
+	int numthreads = num_threads(1.0);
 
 	LOG(NULL, "Computing hashes", "for %i/full", version);
 
@@ -482,7 +483,7 @@ struct manifest *full_manifest_from_directory(int version)
 
 	string_or_die(&dir, "%s/%i/full", image_dir, version);
 
-	threadpool = g_thread_pool_new(get_hash, dir, 12, FALSE, NULL);
+	threadpool = g_thread_pool_new(get_hash, dir, numthreads, FALSE, NULL);
 
 	iterate_directory(manifest, dir, "", true);
 
