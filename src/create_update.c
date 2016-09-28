@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <glib.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -258,6 +259,11 @@ int main(int argc, char **argv)
 
 	/* keep valgrind working well */
 	setenv("G_SLICE", "always-malloc", 0);
+
+	if (!setlocale(LC_ALL, "")) {
+		fprintf(stderr, "%s: setlocale() failed\n", argv[0]);
+		return EXIT_FAILURE;
+	}
 
 	if (!parse_options(argc, argv)) {
 		free_globals();
