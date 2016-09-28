@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <getopt.h>
 #include <glib.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,6 +101,11 @@ int main(int argc, char **argv)
 	struct packdata *pack;
 	int exit_status = EXIT_FAILURE;
 	char *file_path = NULL;
+
+	if (!setlocale(LC_ALL, "")) {
+		fprintf(stderr, "%s: setlocale() failed\n", argv[0]);
+		return EXIT_FAILURE;
+	}
 
 	if (!parse_options(argc, argv)) {
 		free_state_globals();
