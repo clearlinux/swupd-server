@@ -15,7 +15,7 @@ error() {
 # eg: all of openstack, pnp, bat, cloud stuff, non-basic scripting language bundles
 ${SWUPDREPO}/mk_groups_ini.sh
 
-PREVREL=`cat ${UPDATEDIR}/image/latest.version`
+PREVREL=`cat ${UPDATEDIR}/image/LAST_VER`
 
 export SWUPD_CERTS_DIR=${SWUPD_CERTS_DIR:-"/root/swupd-certs"}
 export LEAF_KEY="leaf.key.pem"
@@ -46,7 +46,7 @@ for job in $(jobs -p); do
 done
 
 # expose the new build to staging / testing
-echo ${VER} > ${UPDATEDIR}/image/latest.version
+echo ${VER} > ${UPDATEDIR}/image/LAST_VER
 
 STAGING_FILE="${UPDATEDIR}/www/version/formatstaging/latest"
 if [ ! -f "${STAGING_FILE}" ]; then

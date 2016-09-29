@@ -27,7 +27,7 @@ init_server_ini() {
 }
 
 set_latest_ver() {
-  echo "$1" > $DIR/image/latest.version
+  echo "$1" > $DIR/image/LAST_VER
 }
 
 init_groups_ini() {

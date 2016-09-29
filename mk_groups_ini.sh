@@ -18,8 +18,8 @@ if [ ! -f "$SWUPD_SERVER_INI" ]; then
 	sed -i "s|/var/lib/update|$UPDATEDIR|" $SWUPD_SERVER_INI
 fi
 
-if [ ! -f "$UPDATEDIR/image/latest.version" ]; then
-	echo "0" > $UPDATEDIR/image/latest.version
+if [ ! -f "$UPDATEDIR/image/LAST_VER" ]; then
+	echo "0" > $UPDATEDIR/image/LAST_VER
 fi
 
 echo "rebuilding $SWUPD_GROUPS_INI based on $BUNDLEREPO"
