@@ -418,7 +418,7 @@ GList *get_sub_manifest_includes(char *component, int version)
 	char *included;
 	char line[8192];
 
-	conf = config_output_dir();
+	conf = config_image_base();
 	if (conf == NULL) {
 		assert(0);
 	}

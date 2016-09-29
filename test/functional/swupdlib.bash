@@ -58,9 +58,9 @@ gen_includes_file() {
   local bundle=$1
   local ver=$2
   local includes="${@:3}"
-  mkdir -p $DIR/www/$ver/noship
+  mkdir -p $DIR/image/$ver/noship
   for b in $includes; do
-    cat >> $DIR/www/$ver/noship/"$bundle"-includes << EOF
+    cat >> $DIR/image/$ver/noship/"$bundle"-includes << EOF
 $b
 EOF
   done
