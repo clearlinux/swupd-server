@@ -141,6 +141,7 @@ static bool parse_options(int argc, char **argv)
 static void populate_dirs(int version)
 {
 	char *newversiondir;
+	char *newversiondircontent = NULL;
 
 	string_or_die(&newversiondir, "%s/%d", image_dir, version);
 
@@ -182,9 +183,11 @@ static void populate_dirs(int version)
 			}
 
 			string_or_die(&newversiondir, "%s/%d/%s", image_dir, version, group);
+			string_or_die(&newversiondircontent, "%s/%d/%s.content.txt", image_dir, version, group);
 
 			/* Create the bundle directory(s) as needed */
-			if (access(newversiondir, F_OK | R_OK) != 0) {
+			if (access(newversiondir, F_OK | R_OK) != 0 &&
+			    access(newversiondircontent, F_OK | R_OK) != 0) {
 				printf("%s does not exist...creating\n", group);
 				if (mkdir(newversiondir, 0755) != 0) {
 					printf("Failed to create %s subdirectory\n", group);
@@ -193,6 +196,7 @@ static void populate_dirs(int version)
 		}
 	}
 	free(newversiondir);
+	free(newversiondircontent);
 }
 
 static int check_build_env(void)
