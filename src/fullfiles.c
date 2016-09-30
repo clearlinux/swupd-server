@@ -136,6 +136,8 @@ static void create_fullfile(struct file *file)
 			}
 			done += curr;
 		}
+		close(fd);
+		fd = -1;
 	}
 
 	for (int i = 0; compression_filters[i]; i++) {
