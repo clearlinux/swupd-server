@@ -49,6 +49,7 @@ static void banner(void)
 static const struct option prog_opts[] = {
 	{ "help", no_argument, 0, 'h' },
 	{ "version", no_argument, 0, 'v' },
+	{ "log-stdout", no_argument, 0, 'l' },
 	{ "osversion", required_argument, 0, 'o' },
 	{ "minversion", required_argument, 0, 'm' },
 	{ "format", required_argument, 0, 'F' },
@@ -66,6 +67,7 @@ static void print_help(const char *name)
 	printf("   -v, --version           Show software version\n");
 	printf("\n");
 	printf("Application Options:\n");
+	printf("   -l, --log-stdout        Write log messages also to stdout\n");
 	printf("   -o, --osversion         The OS version for which to create an update\n");
 	printf("   -m, --minversion        Optional minimum file version to write into manifests per file\n");
 	printf("   -F, --format            Format number for the update\n");
@@ -84,6 +86,9 @@ static bool parse_options(int argc, char **argv)
 		case 'h':
 			print_help(argv[0]);
 			return false;
+		case 'l':
+			init_log_stdout();
+			break;
 		case 'v':
 			banner();
 			return false;

@@ -45,6 +45,7 @@ static void banner(void)
 
 static const struct option prog_opts[] = {
 	{ "help", no_argument, 0, 'h' },
+	{ "log-stdout", no_argument, 0, 'l' },
 	{ "statedir", required_argument, 0, 'S' },
 	{ 0, 0, 0, 0 }
 };
@@ -55,6 +56,7 @@ static void usage(const char *name)
 	printf("   %s <start version> <latest version> <bundle>\n\n", name);
 	printf("Help options:\n");
 	printf("   -h, --help              Show help options\n");
+	printf("   -l, --log-stdout        Write log messages also to stdout\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
 	printf("\n");
 }
@@ -69,6 +71,9 @@ static bool parse_options(int argc, char **argv)
 		case 'h':
 			usage(argv[0]);
 			return false;
+		case 'l':
+			init_log_stdout();
+			break;
 		case 'S':
 			if (!optarg || !set_state_dir(optarg)) {
 				printf("Invalid --statedir argument ''%s'\n\n", optarg);
