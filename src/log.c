@@ -33,7 +33,7 @@
 
 #include "swupd.h"
 
-static FILE *logfile;
+static FILE *logfile[2];
 
 static struct timeval start_time;
 
@@ -41,13 +41,13 @@ void init_log(const char *prefix, const char *bundle, int start, int end)
 {
 	char *filename;
 	string_or_die(&filename, "%s%s-from-%i-to-%i.log", prefix, bundle, start, end);
-	logfile = fopen(filename, "w");
+	logfile[0] = fopen(filename, "w");
 	free(filename);
 	gettimeofday(&start_time, NULL);
 }
 void init_log_stdout(void)
 {
-	logfile = stdout;
+	logfile[1] = stdout;
 	gettimeofday(&start_time, NULL);
 }
 
@@ -91,8 +91,9 @@ void __log_message(struct file *file, char *msg, char *filename, int linenr, con
 	char *logstring = NULL;
 	char filebuf[4096];
 	char filebuf2[4096];
+	int i;
 
-	if (!logfile) {
+	if (!logfile[0] && !logfile[1]) {
 		return;
 	}
 
@@ -119,12 +120,16 @@ void __log_message(struct file *file, char *msg, char *filename, int linenr, con
 		strcat(filebuf2, " ");
 	}
 
-	fprintf(logfile, "%3i.%03i %5s %s:%03i\t| %s\t| %s\t| %s\n",
-		(int)current_time.tv_sec, (int)current_time.tv_usec / 1000, logstring, filebuf, linenr, filebuf2, msg, buf);
+	for (i = 0; i < 2; i++) {
+		if (logfile[i]) {
+			fprintf(logfile[i], "%3i.%03i %5s %s:%03i\t| %s\t| %s\t| %s\n",
+				(int)current_time.tv_sec, (int)current_time.tv_usec / 1000, logstring, filebuf, linenr, filebuf2, msg, buf);
+			fflush(logfile[i]);
+		}
+	}
 
 	free(logstring);
 	free(buf);
-	fflush(logfile);
 }
 
 void close_log(int version, int exit_status)
@@ -133,7 +138,7 @@ void close_log(int version, int exit_status)
 	int t_sec;
 	int t_msec;
 
-	if (!logfile) {
+	if (!logfile[0] && !logfile[1]) {
 		return;
 	}
 
@@ -159,6 +164,8 @@ void close_log(int version, int exit_status)
 		printf("Update build failed for version %i\n", version);
 	}
 
-	fclose(logfile);
-	logfile = NULL;
+	if (logfile[0]) {
+		fclose(logfile[0]);
+		logfile[0] = NULL;
+	}
 }
