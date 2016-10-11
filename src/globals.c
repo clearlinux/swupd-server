@@ -40,6 +40,7 @@ char *state_dir = NULL;
 char *packstage_dir = NULL;
 char *image_dir = NULL;
 char *staging_dir = NULL;
+char *manifest_cmd = NULL;
 
 bool set_format(char *userinput)
 {
@@ -76,6 +77,13 @@ bool set_state_dir(char *dir)
 	return true;
 }
 
+bool set_manifest_cmd(const char *cmd)
+{
+	free(manifest_cmd);
+	manifest_cmd = strdup(cmd);
+	return true;
+}
+
 bool init_globals(void)
 {
 	if (format == 0) {
@@ -103,6 +111,7 @@ void free_globals(void)
 	free(packstage_dir);
 	free(image_dir);
 	free(staging_dir);
+	free(manifest_cmd);
 }
 
 bool init_state_globals(void)
@@ -123,4 +132,5 @@ void free_state_globals(void)
 	free(packstage_dir);
 	free(image_dir);
 	free(staging_dir);
+	free(manifest_cmd);
 }

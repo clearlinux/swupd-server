@@ -147,12 +147,14 @@ extern char *state_dir;
 extern char *packstage_dir;
 extern char *image_dir;
 extern char *staging_dir;
+extern char *manifest_cmd;
 
 extern bool init_globals(void);
 extern void free_globals(void);
 extern bool set_format(char *);
 extern void check_root(void);
 extern bool set_state_dir(char *);
+extern bool set_manifest_cmd(const char *cmd);
 extern bool init_state_globals(void);
 extern void free_state_globals(void);
 

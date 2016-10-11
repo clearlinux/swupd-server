@@ -825,6 +825,17 @@ static int write_manifest_plain(struct manifest *manifest)
 		free(submanifest_filename);
 	}
 
+	if (manifest_cmd) {
+		fclose(out);
+		out = NULL;
+
+		char *const cmd[] = { manifest_cmd, filename, NULL };
+		int cmdret = system_argv(cmd);
+		if (cmdret != 0) {
+			assert(0);
+		}
+	}
+
 	ret = 0;
 exit:
 	if (manifest_tempdir) {

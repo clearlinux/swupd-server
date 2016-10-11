@@ -57,6 +57,7 @@ static const struct option prog_opts[] = {
 	{ "getformat", no_argument, 0, 'g' },
 	{ "statedir", required_argument, 0, 'S' },
 	{ "signcontent", no_argument, 0, 's' },
+	{ "manifestcmd", required_argument, 0, 'M' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -76,6 +77,7 @@ static void print_help(const char *name)
 	printf("   -g, --getformat         Print current format string and exit\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
 	printf("   -s, --signcontent       Enables cryptographic signing of update content\n");
+	printf("   -M, --manifestcmd       External command which gets invoked for each new Manifest file");
 	printf("\n");
 }
 
@@ -132,6 +134,12 @@ static bool parse_options(int argc, char **argv)
 			exit(0);
 		case 's':
 			enable_signing = true;
+			break;
+		case 'M':
+			if (!optarg || !set_manifest_cmd(optarg)) {
+				printf("Invalid --manifestcmd argument: ''%s''\n\n", optarg);
+				return false;
+			}
 			break;
 		}
 	}
