@@ -812,6 +812,11 @@ static int write_manifest_plain(struct manifest *manifest)
 		}
 
 		string_or_die(&tempmanifest, "%s/Manifest.%s", manifest_tempdir, file->filename);
+		/*
+		 * use_xattr Has to match swupd-client:
+		 * there it is enabled unconditionally in verify_file().
+		 */
+		file->use_xattrs = true;
 		populate_file_struct(file, tempmanifest);
 		ret = compute_hash(file, tempmanifest);
 		if (ret != 0) {
