@@ -20,6 +20,7 @@ load "../swupdlib"
 }
 
 @test "make_pack root priv check" {
+  [ $EUID -eq 0 ] && skip "test can only be run as non-root"
   run $MAKE_PACK foo bar foo
   [ "$status" -eq 1 ]
   [[ "$output" =~ "not being run as root.. exiting" ]]
