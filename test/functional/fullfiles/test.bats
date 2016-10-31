@@ -14,6 +14,7 @@ load "../swupdlib"
 }
 
 @test "make_fullfiles root priv check" {
+  [ $EUID -eq 0 ] && skip "test can only be run as non-root"
   run $MAKE_FULLFILES foo
   [ "$status" -eq 1 ]
   [[ "$output" =~ "not being run as root.. exiting" ]]
