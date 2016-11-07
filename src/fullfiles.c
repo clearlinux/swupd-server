@@ -252,7 +252,7 @@ static GList *get_deduplicated_fullfile_list(struct manifest *manifest)
 	manifest->files = g_list_sort(manifest->files, file_sort_hash);
 
 	list = g_list_first(manifest->files);
-	while (prev == NULL) {
+	while (prev == NULL && list != NULL) {
 		tmp = list->data;
 		list = g_list_next(list);
 
