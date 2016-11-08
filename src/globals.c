@@ -39,6 +39,7 @@ char *state_dir = NULL;
 char *packstage_dir = NULL;
 char *image_dir = NULL;
 char *staging_dir = NULL;
+char *content_url = NULL;
 
 bool set_format(char *userinput)
 {
@@ -74,6 +75,17 @@ bool set_state_dir(char *dir)
 
 	return true;
 }
+
+bool set_content_url(const char *url)
+{
+	if (content_url) {
+		free(content_url);
+	}
+	string_or_die(&content_url, "%s", url);
+
+	return true;
+}
+
 
 bool init_globals(void)
 {
@@ -122,4 +134,5 @@ void free_state_globals(void)
 	free(packstage_dir);
 	free(image_dir);
 	free(staging_dir);
+	free(content_url);
 }

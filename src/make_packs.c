@@ -47,6 +47,7 @@ static const struct option prog_opts[] = {
 	{ "help", no_argument, 0, 'h' },
 	{ "log-stdout", no_argument, 0, 'l' },
 	{ "statedir", required_argument, 0, 'S' },
+	{ "content-url", required_argument, 0, 'u' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -58,6 +59,7 @@ static void usage(const char *name)
 	printf("   -h, --help              Show help options\n");
 	printf("   -l, --log-stdout        Write log messages also to stdout\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
+	printf("   -u, --content-url       Base URL of the update repo (optional, used to retrieve missing files on demand");
 	printf("\n");
 }
 
@@ -77,6 +79,12 @@ static bool parse_options(int argc, char **argv)
 		case 'S':
 			if (!optarg || !set_state_dir(optarg)) {
 				printf("Invalid --statedir argument ''%s'\n\n", optarg);
+				return false;
+			}
+			break;
+		case 'u':
+			if (!optarg || !set_content_url(optarg)) {
+				printf("Invalid --content-url argument ''%s''\n\n", optarg);
 				return false;
 			}
 			break;
