@@ -35,6 +35,7 @@
 
 #include "swupd.h"
 #include "xattrs.h"
+#include "curl_helper.h"
 
 void __create_delta(struct file *file, int from_version, int to_version, char *from_hash)
 {
@@ -126,19 +127,11 @@ void __create_delta(struct file *file, int from_version, int to_version, char *f
 		delete_original = true;
 
 		/*
-		 * This is a proof-of-concept. A real implementation should use
-		 * a combination of libcurl + libarchive calls to unpack the files.
-		 * For current Ostro OS, deltas despite xattr differences would
-		 * be needed, otherwise this code here is of little use (all
-		 * modified files fail the xattr sameness check, because security.ima
-		 * changes when file content changes).
+		 * Download and unpack.
 		 */
 		string_or_die(&url, "%s/%d/files/%s.tar", content_url, from_version, last_hash);
 		LOG(file, "Downloading original file", "%s to %s", url, original);
-
-		/* bsdtar can detect compression when reading from stdin, GNU tar can't. */
-		string_or_die(&cmd, "curl -s %s | bsdtar -C %s -xf -", url, tmpdir);
-		if (system(cmd)) {
+		if (curl_helper_unpack_tar(url, tmpdir)) {
 			LOG(file, "Downloading/unpacking failed, skipping delta", "%s", url);
 			goto out;
 		}

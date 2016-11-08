@@ -35,6 +35,7 @@
 #include <unistd.h>
 
 #include "swupd.h"
+#include "curl_helper.h"
 
 static void banner(void)
 {
@@ -164,5 +165,6 @@ int main(int argc, char **argv)
 	       module, start_version, end_version);
 
 	free_state_globals();
+	curl_helper_free();
 	return exit_status;
 }

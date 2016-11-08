@@ -248,6 +248,7 @@ extern void consolidate_submanifests(struct manifest *manifest);
 extern void populate_file_struct(struct file *file, char *filename);
 extern void download_exta_base_content(void);
 
+struct timeval;
 extern char *get_elapsed_time(struct timeval *t1, struct timeval *t2);
 extern void init_log(const char *prefix, const char *bundle, int start, int end);
 extern void init_log_stdout(void);

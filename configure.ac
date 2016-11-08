@@ -37,6 +37,7 @@ AC_ARG_ENABLE(
 	AC_DEFINE([SWUPD_WITH_BSDTAR], 0, [Use default tar command])
 )
 PKG_CHECK_MODULES([libarchive], [libarchive])
+PKG_CHECK_MODULES([libcurl], [libcurl])
 
 AC_ARG_ENABLE(
   [tests],
