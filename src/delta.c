@@ -97,7 +97,7 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 		ret = 0;
 		goto out;
 	}
-	xattrs_copy(original, newfile);
+	xattrs_copy(original, testnewfile);
 
 	/* does xattrs have been correctly copied?*/
 	if (xattrs_compare(original, testnewfile) != 0) {
