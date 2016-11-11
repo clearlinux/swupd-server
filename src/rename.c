@@ -133,18 +133,13 @@ static void precompute_file_data(struct manifest *manifest, struct file *file)
 
 	c1 = file->filename;
 	c2 = file->alpha_only_filename;
-	while (*c1) {
-		while (*c1 && !isalpha(*c1))
-			c1++;
-		if (!*c1) {
-			break;
+	if (c2) {
+		for(char c=*c1; c ; c1++) {
+			if (isalpha(c)) { /* Only copy letters */
+				*c2++ = c;
+			}
 		}
-		if (c2 == NULL) {
-			break;
-		}
-		*c2 = *c1;
-		c1++;
-		c2++;
+		/* alpha_only_filename is NUL terminated by calloc */
 	}
 
 	if (manifest) {
