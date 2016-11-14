@@ -368,7 +368,7 @@ int main(int argc, char **argv)
 		rename_detection(new_core);
 #endif
 		old_deleted = remove_old_deleted_files(old_core, new_core);
-		sort_manifest_by_version(new_core);
+		sort_manifest_by_version(new_core); /* sorts by filename */
 		newfiles = prune_manifest(new_core);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");

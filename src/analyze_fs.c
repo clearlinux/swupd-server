@@ -42,6 +42,10 @@
 
 static GThreadPool *threadpool;
 
+/* Why not strcpy? Looks like the hash was going to be stored in
+ * binary at one stage. Should use g_string_chunk_insert_const to
+ * change hash_compare to a pointer compare
+ */
 void hash_assign(char *src, char *dst)
 {
 	memcpy(dst, src, SWUPD_HASH_LEN - 1);
@@ -196,7 +200,7 @@ int compute_hash(struct file *file, char *filename)
 		return 0;
 	}
 
-	hash_set_zeros(key);
+	hash_set_zeros(key);	/* Set to 64 '0' (not '\0') characters */
 
 	if (file->is_link) {
 		char link[PATH_MAX];
