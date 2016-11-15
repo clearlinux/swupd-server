@@ -817,6 +817,11 @@ static int write_manifest_plain(struct manifest *manifest)
 		}
 
 		string_or_die(&tempmanifest, "%s/Manifest.%s", manifest_tempdir, file->filename);
+		/*
+		 * use_xattr Has to match swupd-client:
+		 * there it is enabled unconditionally in verify_file().
+		 */
+		file->use_xattrs = true;
 		populate_file_struct(file, tempmanifest);
 		ret = compute_hash(file, tempmanifest);
 		if (ret != 0) {
@@ -828,6 +833,17 @@ static int write_manifest_plain(struct manifest *manifest)
 	write_entry:
 		fprintf(out, "%s\t%s\t%i\t%s\n", file_type_to_string(file), file->hash, file->last_change, file->filename);
 		free(submanifest_filename);
+	}
+
+	if (manifest_cmd) {
+		fclose(out);
+		out = NULL;
+
+		char *const cmd[] = { manifest_cmd, filename, NULL };
+		int cmdret = system_argv(cmd);
+		if (cmdret != 0) {
+			assert(0);
+		}
 	}
 
 	ret = 0;

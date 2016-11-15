@@ -275,7 +275,7 @@ static void get_hash(gpointer data, gpointer user_data)
 /* disallow characters which can do unexpected things when the filename is
  * used on a tar command line via system("tar [args] filename [more args]");
  */
-static bool illegal_characters(char *filename)
+static bool illegal_characters(const char *filename)
 {
 	char c;
 	int i;
@@ -301,25 +301,145 @@ static bool illegal_characters(char *filename)
 	return false;
 }
 
+static void add_file(struct manifest *manifest,
+		     const char *entry_name,
+		     char *sub_filename,
+		     char *fullname,
+		     bool do_hash)
+{
+	GError *err = NULL;
+	struct file *file;
+
+	if (illegal_characters(entry_name)) {
+		printf("WARNING: Filename %s includes illegal character(s) ...skipping.\n", sub_filename);
+		free(sub_filename);
+		free(fullname);
+		return;
+	}
+
+	file = calloc(1, sizeof(struct file));
+	assert(file);
+
+	file->last_change = manifest->version;
+	file->filename = sub_filename;
+
+	populate_file_struct(file, fullname);
+	if (file->is_deleted) {
+		/*
+		 * populate_file_struct() logs a stat() failure, but
+		 * does not abort. When adding files that should
+		 * exist, this case is an error.
+		 */
+		LOG(NULL, "file not found", "%s", fullname);
+		assert(0);
+	}
+
+
+	/* if for some reason there is a file in the official build
+	 * which should not be included in the Manifest, then open a bug
+	 * to get it removed, and work around its presence by
+	 * excluding it here, eg:
+	 if (strncmp(file->filename, "/dev/", 5) == 0) {
+	 continue;
+	 }
+	*/
+
+	if (do_hash) {
+		/* compute the hash from a thread */
+		int ret;
+		ret = g_thread_pool_push(threadpool, file, &err);
+		if (ret == FALSE) {
+			printf("GThread hash computation push error\n");
+			printf("%s\n", err->message);
+			assert(0);
+		}
+	}
+	manifest->files = g_list_prepend(manifest->files, file);
+	manifest->count++;
+}
+
+
 static void iterate_directory(struct manifest *manifest, char *pathprefix,
 			      char *subpath, bool do_hash)
 {
 	DIR *dir;
 	struct dirent *entry;
 	char *fullpath;
-	int ret;
-	GError *err = NULL;
 
 	string_or_die(&fullpath, "%s/%s", pathprefix, subpath);
 
 	dir = opendir(fullpath);
 	if (!dir) {
+		FILE *content;
+		int len;
 		free(fullpath);
+		if (errno != ENOENT) {
+			return;
+		}
+		/*
+		 * If there is a <dir>.content.txt instead of
+		 * the actual directory, then read that
+		 * file. It has a list of path names,
+		 * including all directories. The
+		 * corresponding file system entry is then
+		 * expected to be in a pre-populated "full"
+		 * directory.
+		 */
+		if (subpath[0]) {
+			string_or_die(&fullpath, "%s/%s.content.txt", pathprefix, len, subpath);
+		} else {
+			string_or_die(&fullpath, "%s.content.txt", pathprefix);
+		}
+		content = fopen(fullpath, "r");
+		free(fullpath);
+		fullpath = NULL;
+		if (content) {
+			char *line = NULL;
+			size_t len = 0;
+			ssize_t read;
+			const char *full;
+			int full_len;
+			/*
+			 * determine path to "full" directory: it is assumed to be alongside
+			 * "pathprefix", i.e. pathprefix/../full. But pathprefix does not exit,
+			 * so we have to strip the last path component.
+			 */
+			full = strrchr(pathprefix, '/');
+			if (full) {
+				full_len = full - pathprefix + 1;
+				full = pathprefix;
+			} else {
+				full = "";
+				full_len = 0;
+			}
+			while ((read = getline(&line, &len, content)) != -1) {
+				if (read) {
+					const char *entry_name = strrchr(line, '/');
+					if (entry_name) {
+						entry_name++;
+					} else {
+						entry_name = line;
+					}
+					if (line[read - 1] == '\n') {
+						line[read - 1] = 0;
+					}
+					string_or_die(&fullpath, "%.*sfull/%s", full_len, full, line);
+					add_file(manifest,
+						 entry_name,
+						 strdup(line),
+						 fullpath,
+						 do_hash);
+				}
+			}
+			free(line);
+		}
+
+		// If both directory and content file are missing, silently (?)
+		// don't add anything to the manifest.
 		return;
 	}
 
 	while (dir) {
-		struct file *file;
 		char *sub_filename;
 		char *fullname;
 
@@ -334,50 +454,13 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		}
 
 		string_or_die(&sub_filename, "%s/%s", subpath, entry->d_name);
-
-		if (illegal_characters(entry->d_name)) {
-			printf("WARNING: Filename %s includes illegal character(s) ...skipping.\n", sub_filename);
-			free(sub_filename);
-			continue;
-		}
-
-		file = calloc(1, sizeof(struct file));
-		if (!file) {
-			break;
-		}
-
-		file->last_change = manifest->version;
-		file->filename = sub_filename;
-
 		string_or_die(&fullname, "%s/%s", fullpath, entry->d_name);
-		populate_file_struct(file, fullname);
-		free(fullname);
-
 		if (entry->d_type == DT_DIR) {
-			iterate_directory(manifest, pathprefix, file->filename, do_hash);
+			iterate_directory(manifest, pathprefix, sub_filename, do_hash);
 		}
+		/* takes ownership of the strings */
+		add_file(manifest, entry->d_name, sub_filename, fullname, do_hash);
 
-		/* if for some reason there is a file in the official build
-		 * which should not be included in the Manifest, then open a bug
-		 * to get it removed, and work around its presence by
-		 * excluding it here, eg:
-		if (strncmp(file->filename, "/dev/", 5) == 0) {
-			continue;
-		}
-		 */
-
-		if (do_hash) {
-			/* compute the hash from a thread */
-			ret = g_thread_pool_push(threadpool, file, &err);
-			if (ret == FALSE) {
-				printf("GThread hash computation push error\n");
-				printf("%s\n", err->message);
-				closedir(dir);
-				return;
-			}
-		}
-		manifest->files = g_list_prepend(manifest->files, file);
-		manifest->count++;
 	}
 	closedir(dir);
 	free(fullpath);
@@ -387,6 +470,9 @@ struct manifest *full_manifest_from_directory(int version)
 {
 	struct manifest *manifest;
 	char *dir;
+	int numthreads = getenv("SWUPD_NUM_THREADS") ?
+		atoi(getenv("SWUPD_NUM_THREADS")) :
+		sysconf(_SC_NPROCESSORS_ONLN);
 
 	LOG(NULL, "Computing hashes", "for %i/full", version);
 
@@ -394,7 +480,7 @@ struct manifest *full_manifest_from_directory(int version)
 
 	string_or_die(&dir, "%s/%i/full", image_dir, version);
 
-	threadpool = g_thread_pool_new(get_hash, dir, 12, FALSE, NULL);
+	threadpool = g_thread_pool_new(get_hash, dir, numthreads, FALSE, NULL);
 
 	iterate_directory(manifest, dir, "", true);
 

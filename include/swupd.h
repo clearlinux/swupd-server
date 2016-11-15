@@ -20,12 +20,12 @@
 #define TAR_COMMAND "bsdtar"
 #define TAR_XATTR_ARGS ""
 #define TAR_XATTR_ARGS_STRLIST
-#define TAR_WARN_ARGS ""
+#define TAR_WARN_ARGS_STRLIST
 #else
 #define TAR_COMMAND "tar"
 #define TAR_XATTR_ARGS "--xattrs --xattrs-include='*'"
 #define TAR_XATTR_ARGS_STRLIST "--xattrs", "--xattrs-include='*'",
-#define TAR_WARN_ARGS "--warning=no-timestamp"
+#define TAR_WARN_ARGS_STRLIST "--warning=no-timestamp",
 #endif
 
 #if SWUPD_WITH_SELINUX
@@ -149,12 +149,14 @@ extern char *state_dir;
 extern char *packstage_dir;
 extern char *image_dir;
 extern char *staging_dir;
+extern char *manifest_cmd;
 
 extern bool init_globals(void);
 extern void free_globals(void);
 extern bool set_format(char *);
 extern void check_root(void);
 extern bool set_state_dir(char *);
+extern bool set_manifest_cmd(const char *cmd);
 extern bool init_state_globals(void);
 extern void free_state_globals(void);
 

@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <glib.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,12 +50,14 @@ static void banner(void)
 static const struct option prog_opts[] = {
 	{ "help", no_argument, 0, 'h' },
 	{ "version", no_argument, 0, 'v' },
+	{ "log-stdout", no_argument, 0, 'l' },
 	{ "osversion", required_argument, 0, 'o' },
 	{ "minversion", required_argument, 0, 'm' },
 	{ "format", required_argument, 0, 'F' },
 	{ "getformat", no_argument, 0, 'g' },
 	{ "statedir", required_argument, 0, 'S' },
 	{ "signcontent", no_argument, 0, 's' },
+	{ "manifestcmd", required_argument, 0, 'M' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -67,12 +70,14 @@ static void print_help(const char *name)
 	printf("   -v, --version           Show software version\n");
 	printf("\n");
 	printf("Application Options:\n");
+	printf("   -l, --log-stdout        Write log messages also to stdout\n");
 	printf("   -o, --osversion         The OS version for which to create an update\n");
 	printf("   -m, --minversion        Optional minimum file version to write into manifests per file\n");
 	printf("   -F, --format            Format number for the update\n");
 	printf("   -g, --getformat         Print current format string and exit\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
 	printf("   -s, --signcontent       Enables cryptographic signing of update content\n");
+	printf("   -M, --manifestcmd       External command which gets invoked for each new Manifest file");
 	printf("\n");
 }
 
@@ -86,6 +91,9 @@ static bool parse_options(int argc, char **argv)
 		case 'h':
 			print_help(argv[0]);
 			return false;
+		case 'l':
+			init_log_stdout();
+			break;
 		case 'v':
 			banner();
 			return false;
@@ -127,6 +135,12 @@ static bool parse_options(int argc, char **argv)
 		case 's':
 			enable_signing = true;
 			break;
+		case 'M':
+			if (!optarg || !set_manifest_cmd(optarg)) {
+				printf("Invalid --manifestcmd argument: ''%s''\n\n", optarg);
+				return false;
+			}
+			break;
 		}
 	}
 
@@ -140,6 +154,7 @@ static bool parse_options(int argc, char **argv)
 static void populate_dirs(int version)
 {
 	char *newversiondir;
+	char *newversiondircontent;
 
 	string_or_die(&newversiondir, "%s/%d", image_dir, version);
 
@@ -181,9 +196,11 @@ static void populate_dirs(int version)
 			}
 
 			string_or_die(&newversiondir, "%s/%d/%s", image_dir, version, group);
+			string_or_die(&newversiondircontent, "%s/%d/%s.content.txt", image_dir, version, group);
 
 			/* Create the bundle directory(s) as needed */
-			if (access(newversiondir, F_OK | R_OK) != 0) {
+			if (access(newversiondir, F_OK | R_OK) != 0 &&
+			    access(newversiondircontent, F_OK | R_OK) != 0) {
 				printf("%s does not exist...creating\n", group);
 				if (mkdir(newversiondir, 0755) != 0) {
 					printf("Failed to create %s subdirectory\n", group);
@@ -192,6 +209,7 @@ static void populate_dirs(int version)
 		}
 	}
 	free(newversiondir);
+	free(newversiondircontent);
 }
 
 static int check_build_env(void)
@@ -239,6 +257,11 @@ int main(int argc, char **argv)
 
 	/* keep valgrind working well */
 	setenv("G_SLICE", "always-malloc", 0);
+
+	if (!setlocale(LC_ALL, "")) {
+		fprintf(stderr, "%s: setlocale() failed\n", argv[0]);
+		return EXIT_FAILURE;
+	}
 
 	if (!parse_options(argc, argv)) {
 		free_globals();
