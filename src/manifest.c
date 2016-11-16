@@ -64,7 +64,7 @@ int file_sort_version(gconstpointer a, gconstpointer b)
 		return 1;
 	}
 
-	return strcmp(B->filename, A->filename);
+	return strcmp(A->filename, B->filename);
 }
 
 int file_sort_filename(gconstpointer a, gconstpointer b)
