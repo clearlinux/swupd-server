@@ -353,7 +353,7 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		populate_file_struct(file, fullname);
 		free(fullname);
 
-		if (entry->d_type == DT_DIR) {
+		if (file->is_dir) {
 			iterate_directory(manifest, pathprefix, file->filename, do_hash);
 		}
 
