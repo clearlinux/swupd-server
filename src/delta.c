@@ -35,7 +35,7 @@
 #include "swupd.h"
 #include "xattrs.h"
 
-void __create_delta(struct file *file, int from_version, char *from_hash)
+void __create_delta(struct file *file, int from_version, int to_version, char *from_hash)
 {
 	char *original = NULL, *newfile = NULL, *outfile = NULL, *dotfile = NULL, *testnewfile = NULL, *conf = NULL;
 	char *tmpdir = NULL;
@@ -59,7 +59,7 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 	}
 
 	conf = config_image_base();
-	string_or_die(&newfile, "%s/%i/full/%s", conf, file->last_change, file->filename);
+	string_or_die(&newfile, "%s/%i/full/%s", conf, to_version, file->filename);
 
 	string_or_die(&original, "%s/%i/full/%s", conf, from_version, file->peer->filename);
 

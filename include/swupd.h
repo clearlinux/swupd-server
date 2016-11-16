@@ -261,7 +261,7 @@ extern void type_change_detection(struct manifest *manifest);
 extern void rename_detection(struct manifest *manifest);
 extern void link_renames(GList *newfiles, int to_version);
 extern void final_link(GList *files);
-extern void __create_delta(struct file *file, int from_version, char *from_hash);
+extern void __create_delta(struct file *file, int from_version, int to_version, char *from_hash);
 
 extern void account_delta_hit(void);
 extern void account_delta_miss(void);
