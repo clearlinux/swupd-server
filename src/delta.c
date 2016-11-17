@@ -30,6 +30,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <attr/xattr.h>
 #include <unistd.h>
 
 #include "swupd.h"
@@ -62,6 +63,18 @@ void __create_delta(struct file *file, int from_version, int to_version, char *f
 	string_or_die(&newfile, "%s/%i/full/%s", conf, to_version, file->filename);
 
 	string_or_die(&original, "%s/%i/full/%s", conf, from_version, file->peer->filename);
+
+	if (lgetxattr(newfile, "security.ima", NULL, 0) > 0) {
+		/* There is a non-empty security.ima xattr on the new file.
+		 * That xattr contains a hash of the file content. We know that
+		 * the file content has changed, so  the xattr will be different
+		 * from the one on the old file and we can bail out early without
+		 * even bothering with retrieving the original file. A better
+		 * solution for systems with IMA would be to support deltas even
+		 * when xattrs are different.
+		 */
+		goto out;
+	}
 
 	if (access(original, F_OK) &&
 	    content_url) {
