@@ -44,15 +44,15 @@ static void runtime_state_heuristics(struct file *file)
 {
 	/* these are shipped directories that are not themselves state,
 	 * rather only their contents are state */
-	if ((strncmp(file->filename, "/usr/src/debug", 14) == 0) ||
-	    (strncmp(file->filename, "/dev", 4) == 0) ||
-	    (strncmp(file->filename, "/home", 5) == 0) ||
-	    (strncmp(file->filename, "/proc", 5) == 0) ||
-	    (strncmp(file->filename, "/root", 5) == 0) ||
-	    (strncmp(file->filename, "/run", 4) == 0) ||
-	    (strncmp(file->filename, "/sys", 4) == 0) ||
-	    (strncmp(file->filename, "/tmp", 4) == 0) ||
-	    (strncmp(file->filename, "/var", 4) == 0)) {
+	if ((strcmp(file->filename, "/usr/src/debug") == 0) ||
+	    (strcmp(file->filename, "/dev") == 0) ||
+	    (strcmp(file->filename, "/home") == 0) ||
+	    (strcmp(file->filename, "/proc") == 0) ||
+	    (strcmp(file->filename, "/root") == 0) ||
+	    (strcmp(file->filename, "/run") == 0) ||
+	    (strcmp(file->filename, "/sys") == 0) ||
+	    (strcmp(file->filename, "/tmp") == 0) ||
+	    (strcmp(file->filename, "/var") == 0)) {
 		return;
 	}
 
