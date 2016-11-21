@@ -270,7 +270,7 @@ static GList* del_first(GList *list)
 
 
 /* Take a list, return a new list where the filter function returns true */
-static GList* filter(GList *list, int version, int (*f)(struct file *file, int version))
+static GList* new_filtered_list(GList *list, int version, int (*f)(struct file *file, int version))
 {
 	/* make a list of new files, no peer */
 	GList *newlist = NULL;
@@ -284,8 +284,9 @@ static GList* filter(GList *list, int version, int (*f)(struct file *file, int v
 	return newlist;
 }
 
+#if 0
 /* Take a list, return a new list where the filter function returns true */
-static GList* filter_version(GList *list, int version)
+static GList* new_filtered_list_version(GList *list, int version)
 {
 	/* make a list of new files, no peer */
 	GList *newlist = NULL;
@@ -297,6 +298,17 @@ static GList* filter_version(GList *list, int version)
 		}
 	}
 	return newlist;
+}
+#endif
+
+static int renamed_file_p(struct file *file, int unused)
+{
+	return file->is_rename;
+}
+/* Return a new list of renamed files */
+static GList *new_list_renamed_files(GList *infiles)
+{
+	return new_filtered_list(infiles,0,renamed_file_p);
 }
 
 /* Predicate that returns true if this is a new file in the stated version */
@@ -314,7 +326,7 @@ static int new_file_p(struct file *file, int version)
 /* return a new list of the new files */
 static GList* list_new_files(struct manifest *manifest)
 {
-	GList *list = filter(manifest->files, manifest->version, new_file_p);
+	GList *list = new_filtered_list(manifest->files, manifest->version, new_file_p);
 	/* call precompute_file_data for each file on list, return the list */
 	GList *ret = list;
 	for (list = g_list_first(list); list ; list = g_list_next(list)) {
@@ -337,7 +349,7 @@ static int deleted_p(struct file *file, int version)
 
 static GList* list_deleted_files(struct manifest *manifest)
 {
-	GList *list = filter(manifest->files, manifest->version, deleted_p);
+	GList *list = new_filtered_list(manifest->files, manifest->version, deleted_p);
 	GList *ret = list;
 	/* call precompute_file_data for each peer of file on list */
 	for (list = g_list_first(list); list ; list = g_list_next(list)) {
@@ -434,39 +446,39 @@ redo:
 	g_list_free(deleted_files);
 }
 
+
 /* What do we need this for?
  *
  * rename_detection has already set up the links in the manifest it
  * was given.
  *
  */
-GList *link_renames(GList *newfiles, int to_version)
+void link_renames(GList *newfiles, int to_version)
 {
-	GList *list1, *list2, *ret;
+	GList *list1, *list2;
 	GList *targets;
 	struct file *file1, *file2;
 
-	ret = targets = newfiles = g_list_sort(newfiles, file_sort_version);
-
-	list1 = g_list_first(newfiles);
+	targets = new_list_renamed_files(newfiles);
+	/* TODO: Check that g_list_sort is reasonable speed */
+	targets = newfiles = g_list_sort(targets, file_sort_version);
 
 	/* todo: sort newfiles and targets by hash */
 
-	for (; list1; list1 = g_list_next(list1)) {
+	for (list1 = newfiles; list1; list1 = g_list_next(list1)) {
 		file1 = list1->data;
 
-		if ((file1->peer || !file1->is_rename) ||
-		    (file1->is_deleted)) {
+		if (file1->peer || file1->is_deleted) {
 			continue;
 		}
-		/* now, file1 is the new file that got renamed. time to search the rename targets */
+		/* now, file1 is the new file that got renamed.
+		 * time to search the rename targets */
 		list2 = g_list_first(targets);
-		while (list2) {
+		for (; list2; list2 = g_list_next(list2)) {
 			file2 = list2->data;
-			list2 = g_list_next(list2);
 			/* This is like deleted_p but not quite */
 			/* deleted_p returns false for directories and links */
-			if ((!file2->peer || !file2->is_rename) ||
+			if (!file2->peer ||
 			    (!file2->is_deleted) ||
 			    (file2->last_change != to_version)) {
 				continue;
@@ -475,9 +487,9 @@ GList *link_renames(GList *newfiles, int to_version)
 				file1->rename_peer = file2->peer;
 				file1->peer = file2->peer;
 				file2->peer->rename_peer = file1;
-				list2 = NULL;
+				break;
 			}
 		}
 	}
-	return ret;
+	g_list_free(targets);
 }

@@ -117,7 +117,7 @@ setup() {
   # Need to figure out what happens to hard links
 }
 
-@test "rename detection support binary files" {
+@test "rename detection support binary files 2" {
   sudo $CREATE_UPDATE --osversion 10 --statedir $DIR --format 3
   sudo $MAKE_FULLFILES --statedir $DIR 10
   sudo $MAKE_PACK --statedir $DIR 0 10 os-core

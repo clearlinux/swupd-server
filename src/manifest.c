@@ -51,6 +51,10 @@ int file_sort_hash(gconstpointer a, gconstpointer b)
 	return memcmp(A->hash, B->hash, SWUPD_HASH_LEN - 1);
 }
 
+/* Standard sort compare function which sorts 
+ * first on the version where the file changed and then
+ * on the name
+ */
 int file_sort_version(gconstpointer a, gconstpointer b)
 {
 	struct file *A, *B;
