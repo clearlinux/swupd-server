@@ -37,6 +37,7 @@ static char **groups = NULL;
 static gsize groupcount = 0;
 static unsigned int groupcursor = 0;
 
+#if 0
 char *group_packages(char *group)
 {
 	assert(groupfile != NULL);
@@ -50,6 +51,7 @@ char *group_groups(char *group)
 
 	return g_key_file_get_value(groupfile, group, "groups", NULL);
 }
+#endif
 
 char *group_status(char *group)
 {
