@@ -87,6 +87,9 @@ static char *getmagic(char *filename)
 	return c2;
 }
 
+/* Assign a score roughly in the range -100 to 1000 to express how similar
+ * two files are.
+ */
 double rename_score(struct file *old, struct file *new)
 {
 	double score = 0.0;
@@ -98,6 +101,16 @@ double rename_score(struct file *old, struct file *new)
 		score += 400;
 	}
 
+	/* If the files are smaller than about 200 bytes then even a
+	 * single byte change using bsdiff is going to work out as
+	 * bigger than just shipping the new file, so stop if they are
+	 * not the same. No point in running up bsdiff just for the
+	 * sake of it.
+	 */
+	if (new->stat.st_size < BSDIFFSIZE) {
+		return -99.0;
+	}
+	
 	/* points for being in the same directory */
 	if (strcmp(old->dirname, new->dirname) == 0) {
 		score += 10;
@@ -170,9 +183,7 @@ double rename_score(struct file *old, struct file *new)
 	return score;
 }
 
-static void precompute_file_data(int version, const char *component, struct file *file)
-
-
+static void precompute_file_data(int version, const char *component, struct file *file, bool fast)
 {
 	char *c1, *c2;
 	char *filename = NULL;
@@ -206,8 +217,14 @@ static void precompute_file_data(int version, const char *component, struct file
 			printf("Stat failure on %s\n", filename);
 		}
 	}
-
-	file->filetype = getmagic(filename);
+	if (file->stat.st_size < BSDIFFSIZE) {
+		/* thing is too small, always will be regenerated
+		 * so no point in trying to figure out what kind
+		 * of file it is
+		 */
+	} else {
+		file->filetype = getmagic(filename);
+	}
 
 	free(filename);
 
@@ -331,7 +348,7 @@ static GList* list_new_files(struct manifest *manifest)
 	GList *ret = list;
 	for (list = g_list_first(list); list ; list = g_list_next(list)) {
 		struct file *file=list->data;
-		precompute_file_data(manifest->version, manifest->component, file);
+		precompute_file_data(manifest->version, manifest->component, file, true);
 	}
 	return ret;
 }
@@ -357,7 +374,7 @@ static GList* list_deleted_files(struct manifest *manifest)
 		struct file *peer = file->peer;
 		/* Need to get things from the /full/ as we do not know
 		 * which  component may be coming from? */
-		precompute_file_data(peer->last_change, "full", peer);
+		precompute_file_data(peer->last_change, "full", peer, false);
 	}
 	return ret;
 }

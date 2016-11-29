@@ -65,6 +65,13 @@
 #include <lzma.h>
 #endif
 
+/* Approximatly the smallest size of a pair of input files which
+ * differ by a single bit that bsdiff can produce a more compact
+ * deltafile. Files smaller than this are always marked as different.
+ * See the magic 200 value in the bsdiff/src/diff.c code.
+ */
+#define BSDIFFSIZE 200
+
 struct manifest {
 	unsigned long long int format;
 	int version;
@@ -122,7 +129,7 @@ struct file {
 	double rename_score;
 	struct file *rename_peer;
 	char *alpha_only_filename; /* filename minus all numerics/etc */
-	char *filetype;
+	char *filetype;		   /* The output of 'file', truncated */
 	char *basename;
 	char *dirname;
 	/* end of rename detection fields */
