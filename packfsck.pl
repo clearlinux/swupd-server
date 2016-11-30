@@ -7,7 +7,7 @@
 
 my $target = $ARGV[0];
 system("rm /tmp/Manifest");
-system("wget --quiet --no-proxy --no-check-certificate --output-document=/tmp/Manifest https://download.clearlinux.org/update/$target/Manifest.os-core");
+system("wget --quiet --output-document=/tmp/Manifest https://download.clearlinux.org/update/$target/Manifest.os-core");
 
 
 my $from = $target;
@@ -15,7 +15,7 @@ while ($from > $target - 100) {
  $from = $from - 10;
  print "Testing the $from-$target pack\n";
  system("rm /tmp/pack.tar");
- system("wget --quiet --no-proxy --no-check-certificate --output-document=/tmp/pack.tar https://download.clearlinux.org/update/$target/pack-os-core-from-$from.tar");
+ system("wget --quiet ---output-document=/tmp/pack.tar https://download.clearlinux.org/update/$target/pack-os-core-from-$from.tar");
 
 
 
