@@ -34,7 +34,6 @@
 int newversion = -1;
 int minversion = 0;
 unsigned long long int format = 0;
-bool enable_signing = false;
 
 char *state_dir = NULL;
 char *packstage_dir = NULL;

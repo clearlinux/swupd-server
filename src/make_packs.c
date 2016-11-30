@@ -46,7 +46,6 @@ static void banner(void)
 static const struct option prog_opts[] = {
 	{ "help", no_argument, 0, 'h' },
 	{ "statedir", required_argument, 0, 'S' },
-	{ "signcontent", no_argument, 0, 's' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -57,7 +56,6 @@ static void usage(const char *name)
 	printf("Help options:\n");
 	printf("   -h, --help              Show help options\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
-	printf("   -s, --signcontent       Enables cryptographic signing of update content\n");
 	printf("\n");
 }
 
@@ -76,9 +74,6 @@ static bool parse_options(int argc, char **argv)
 				printf("Invalid --statedir argument ''%s'\n\n", optarg);
 				return false;
 			}
-			break;
-		case 's':
-			enable_signing = true;
 			break;
 		}
 	}
@@ -114,12 +109,6 @@ int main(int argc, char **argv)
 	banner();
 	check_root();
 
-	/* Initilize the crypto signature module */
-	if (!signature_initialize()) {
-		printf("Can't initialize the crypto signature module!\n");
-		return exit_status;
-	}
-
 	string_or_die(&file_path, "%s/server.ini", state_dir);
 	read_configuration_file(file_path);
 	free(file_path);
@@ -151,8 +140,6 @@ int main(int argc, char **argv)
 	if (make_pack(pack) == 0) {
 		exit_status = EXIT_SUCCESS;
 	}
-
-	signature_terminate();
 
 	printf("Pack creation %s (pack-%s %i to %li)\n",
 	       exit_status == EXIT_SUCCESS ? "complete" : "failed",

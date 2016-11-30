@@ -26,7 +26,6 @@ swupd_create_update_SOURCES = \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
-	src/signature.c \
 	src/stats.c \
 	src/type_change.c \
 	src/versions.c \
@@ -44,7 +43,6 @@ swupd_make_pack_SOURCES = \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
-	src/signature.c \
 	src/stats.c \
 	src/xattrs.c
 
@@ -61,7 +59,6 @@ swupd_make_fullfiles_SOURCES = \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
-	src/signature.c \
 	src/stats.c \
 	src/xattrs.c
 

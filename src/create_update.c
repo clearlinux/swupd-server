@@ -54,7 +54,6 @@ static const struct option prog_opts[] = {
 	{ "format", required_argument, 0, 'F' },
 	{ "getformat", no_argument, 0, 'g' },
 	{ "statedir", required_argument, 0, 'S' },
-	{ "signcontent", no_argument, 0, 's' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -72,7 +71,6 @@ static void print_help(const char *name)
 	printf("   -F, --format            Format number for the update\n");
 	printf("   -g, --getformat         Print current format string and exit\n");
 	printf("   -S, --statedir          Optional directory to use for state [ default:=%s ]\n", SWUPD_SERVER_STATE_DIR);
-	printf("   -s, --signcontent       Enables cryptographic signing of update content\n");
 	printf("\n");
 }
 
@@ -80,7 +78,7 @@ static bool parse_options(int argc, char **argv)
 {
 	int opt;
 
-	while ((opt = getopt_long(argc, argv, "hvo:m:F:g:S:s", prog_opts, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hvo:m:F:g:S:", prog_opts, NULL)) != -1) {
 		switch (opt) {
 		case '?':
 		case 'h':
@@ -124,9 +122,6 @@ static bool parse_options(int argc, char **argv)
 				free_globals();
 			}
 			exit(0);
-		case 's':
-			enable_signing = true;
-			break;
 		}
 	}
 
@@ -269,12 +264,6 @@ int main(int argc, char **argv)
 	ret = check_build_env();
 	if (ret != 0) {
 		printf("Failed to setup build environment: ERRNO = %i\n", ret);
-		goto exit;
-	}
-
-	/* Initilize the crypto signature module */
-	if (!signature_initialize()) {
-		printf("Can't initialize the crypto signature module!\n");
 		goto exit;
 	}
 
@@ -530,7 +519,6 @@ exit:
 	}
 	release_configuration_data();
 	release_group_file();
-	signature_terminate();
 	g_list_free(manifests_last_versions_list);
 
 	close_log(newversion, exit_status);
