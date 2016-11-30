@@ -307,24 +307,6 @@ static void make_pack_deltas(GList *files)
 	g_thread_pool_free(threadpool, FALSE, TRUE);
 }
 
-/* Returns 0 == success, -1 == failure */
-static int write_pack_signature(struct packdata *pack)
-{
-	char *filename = NULL;
-	int ret = -1;
-
-	string_or_die(&filename, "%s/%i/pack-%s-from-%i.tar",
-		      staging_dir, pack->to, pack->module, pack->from);
-	if (!signature_sign(filename)) {
-		fprintf(stderr, "Creating signature for '%s' failed\n", filename);
-		goto exit;
-	}
-	ret = 0;
-exit:
-	free(filename);
-	return ret;
-}
-
 /* Returns 0 == success, other == failure */
 static int make_final_pack(struct packdata *pack)
 {
@@ -507,13 +489,6 @@ static int make_final_pack(struct packdata *pack)
 	if ((ret != 0) && (ret != 1)) {
 		fprintf(stderr, "Unexpected return value (%d) creating tar of pack %s from %i to %i\n",
 			ret, pack->module, pack->from, pack->to);
-	} else {
-		/* Write the signature file */
-		ret = write_pack_signature(pack);
-		if (ret != 0) {
-			fprintf(stderr, "Failure creating signature of pack %s from %i to %i\n",
-				pack->module, pack->from, pack->to);
-		}
 	}
 
 	/* and clean up */

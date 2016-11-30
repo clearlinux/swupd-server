@@ -696,29 +696,6 @@ static void compute_content_size(struct manifest *manifest)
 }
 
 /* Returns 0 == success, -1 == failure */
-static int write_manifest_signature(struct manifest *manifest, const char *suffix)
-{
-	char *conf = config_output_dir();
-	char *filename = NULL;
-	int ret = -1;
-
-	if (conf == NULL) {
-		assert(0);
-	}
-	string_or_die(&filename, "%s/%i/Manifest.%s%s", conf, manifest->version,
-		      manifest->component, suffix);
-	if (!signature_sign(filename)) {
-		fprintf(stderr, "Creating signature for '%s' failed\n", filename);
-		goto exit;
-	}
-	ret = 0;
-exit:
-	free(filename);
-	free(conf);
-	return ret;
-}
-
-/* Returns 0 == success, -1 == failure */
 static int write_manifest_plain(struct manifest *manifest)
 {
 	GList *includes;
@@ -851,7 +828,7 @@ exit:
 static int write_manifest_tar(struct manifest *manifest)
 {
 	char *conf = config_output_dir();
-	char *directory, *manifesttar, *manifestcomp, *manifestsigned;
+	char *directory, *manifesttar, *manifestcomp;
 	int ret = 0;
 
 	if (conf == NULL) {
@@ -861,19 +838,11 @@ static int write_manifest_tar(struct manifest *manifest)
 	string_or_die(&directory, "--directory=%s/%i", conf, manifest->version);
 	string_or_die(&manifesttar, "%s/%i/Manifest.%s.tar", conf, manifest->version, manifest->component);
 	string_or_die(&manifestcomp, "Manifest.%s", manifest->component);
-	string_or_die(&manifestsigned, "Manifest.%s.signed", manifest->component);
 
 	/* now, tar the thing up for efficient full file download */
-	/* and put the signature of the plain manifest into the archive, too */
-	if (enable_signing) {
-		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
-					 manifesttar, manifestcomp, manifestsigned, NULL };
-		ret = system_argv(tarcmd);
-	} else {
-		char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
-					 manifesttar, manifestcomp, NULL };
-		ret = system_argv(tarcmd);
-	}
+	char *const tarcmd[] = { TAR_COMMAND, directory, TAR_PERM_ATTR_ARGS_STRLIST, "-Jcf",
+				 manifesttar, manifestcomp, NULL };
+	ret = system_argv(tarcmd);
 	if (ret) {
 		fprintf(stderr, "Creation of Manifest.tar failed\n");
 	}
@@ -881,7 +850,6 @@ static int write_manifest_tar(struct manifest *manifest)
 	free(directory);
 	free(manifesttar);
 	free(manifestcomp);
-	free(manifestsigned);
 	free(conf);
 	return ret;
 }
@@ -911,9 +879,7 @@ bool compute_hash_with_xattrs(const char *filename)
 int write_manifest(struct manifest *manifest)
 {
 	if (write_manifest_plain(manifest) == 0 &&
-	    write_manifest_signature(manifest, "") == 0 &&
-	    write_manifest_tar(manifest) == 0 &&
-	    write_manifest_signature(manifest, ".tar") == 0) {
+	    write_manifest_tar(manifest) == 0) {
 		return 0;
 	}
 	return -1;
@@ -1114,9 +1080,6 @@ void create_manifest_delta(int oldversion, int newversion, char *module)
 				LOG(NULL, "dotfile:", " %s does not exist", dotfile);
 			}
 			LOG(NULL, "Failed to rename", "");
-		}
-		if (!signature_sign(outfile)) {
-			fprintf(stderr, "Creating signature for '%s' failed\n", outfile);
 		}
 	} else {
 		sleep(1); /* we raced. whatever. sleep for a bit to get the other guy to make progress */

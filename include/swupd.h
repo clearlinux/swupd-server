@@ -143,7 +143,6 @@ extern int current_version;
 extern int newversion;
 extern int minversion;
 extern unsigned long long int format;
-extern bool enable_signing;
 
 extern char *state_dir;
 extern char *packstage_dir;
@@ -258,9 +257,5 @@ extern int system_argv(char *const argv[]);
 extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
 extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
 			    char *const argvp2[], int stdoutp2, int stderrp2);
-
-extern bool signature_initialize(void);
-extern void signature_terminate(void);
-extern bool signature_sign(const char *filename);
 
 #endif
