@@ -105,4 +105,14 @@ gen_file_plain_change() {
   echo "$ver $name" > $DIR/image/$ver/$bundle/"$name"
 }
 
+gen_file_plain_with_content() {
+  local ver=$1
+  local bundle=$2
+  local name="$3"
+  local content="$4"
+
+  mkdir -p $DIR/image/$ver/$bundle
+  echo "$content" > $DIR/image/$ver/$bundle/"$name"
+}
+
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80
