@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export BATS_TEST_DIRNAME=$PWD
+export TIMEFORMAT
+TIMEFORMAT="time %R %P%% (%U+%S)"
+source ../swupdlib.bash
+exec 3< rundata
+
+while read -r -u 3 
+do
+    read -i "$REPLY" -e CMD
+    eval "set -x ; time ( $CMD ) ; set +x "
+done
