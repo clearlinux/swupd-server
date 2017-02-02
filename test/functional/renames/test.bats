@@ -4,6 +4,7 @@
 load "../swupdlib"
 
 setup() {
+  maybeskip
   clean_test_dir
   init_test_dir
 

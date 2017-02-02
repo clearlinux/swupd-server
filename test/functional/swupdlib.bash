@@ -40,6 +40,11 @@ EOF
   done
 }
 
+# If the variable RUN_JUST_ONE is set then only run that test
+maybeskip() {
+    [ -z "$RUN_JUST_ONE" ] || [ "$RUN_JUST_ONE" -eq "$BATS_TEST_NUMBER" ] || skip
+}
+
 set_os_release() {
   local ver=$1
   local bundle=$2
