@@ -163,6 +163,22 @@ do_an_update() {
   [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 
+@test "directory name changes" {
+  gendataA 10 dir1/foo
+  gendataA 20 dir2/foo
+  do_an_update
+  [[ 1 -eq $(grep '^\.d\.r.*dir1/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 1 -eq $(grep '^F\.\.r.*dir2/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+
+@test "directory name changes small files" {
+  gendataAs 10 dir1/foo
+  gendataAs 20 dir2/foo
+  do_an_update
+  [[ 0 -eq $(grep '^\.d\.r.*dir1/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 0 -eq $(grep '^F\.\.r.*dir2/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+
 # Emacs and vi support
 # Local variables:
 # sh-indentation: 2
