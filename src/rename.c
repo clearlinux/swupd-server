@@ -147,12 +147,14 @@ double rename_score(struct file *old, struct file *new)
 		in--;
 	}
 
+#if 0
 	/* if both start with /boot/vmlinuz give it a boost; this is a local hack due to vmlinuz being very short */
 	if (strncmp(old->filename, "/boot/vmlinuz", 13) == 0 && strncmp(new->filename, "/boot/vmlinuz", 13) == 0) {
 		score += 80;
 	}
 
 	/* if ELF, points for sharing the same soname to the first dot */
+#endif
 
 	/* negative points for not being within 25%+/-1Kb of the same file size */
 	if (old->stat.st_size > ((new->stat.st_size * 1.25) + 1024)) {
