@@ -118,7 +118,8 @@ do_an_update() {
 
   # A renamed file comprises a new file and a deleted file
   [[ 1 -eq $(grep '^F\.\.r.*/baz$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
-  [[ 2 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 1 -eq $(grep '^\.d\.\..*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "rename two files to two" {
   gendataA 10 foo
