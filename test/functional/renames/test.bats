@@ -36,6 +36,18 @@ gendataC() {
   [ -z "$dataC" ] || dataC="$(seq 1000 | gzip | uuencode wombat)"
   gen_file_plain_with_content "$1" test-bundle "$2" "$dataC"
 }
+# Generate small data files
+gendataAs() {
+  gen_file_plain_with_content "$1" test-bundle "$2" "$(seq 50)"
+}
+gendataBs() {
+  gen_file_plain_with_content "$1" test-bundle "$2" "$(seq 24) $(seq 26 49)"
+}
+gendataCs() {
+  # cache string
+  [ -z "$dataCs" ] || dataC="$(seq 50 | gzip | uuencode wombat)"
+  gen_file_plain_with_content "$1" test-bundle "$2" "$dataCs"
+}
 
 # Guts of doing an update
 do_an_update() {
@@ -55,13 +67,37 @@ do_an_update() {
 }
 
 
-@test "rename detection support" {
+@test "basic rename detection support" {
   gendataA 10 foo
   gendataA 20 bar
   do_an_update
   # A renamed file comprises a new file and a deleted file
   [[ 1 -eq $(grep '^F\.\.r.*/bar$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
   [[ 1 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+@test "ignore rename detection for small files" {
+  gendataAs 10 foo
+  gendataAs 20 bar
+  do_an_update
+  # A renamed file comprises a new file and a deleted file
+  [[ 0 -eq $(grep '^F\.\.r.*/bar$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 0 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+@test "ignore rename detection for large to small files" {
+  gendataA 10 foo
+  gendataAs 20 bar
+  do_an_update
+  # A renamed file comprises a new file and a deleted file
+  [[ 0 -eq $(grep '^F\.\.r.*/bar$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 0 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+@test "ignore rename detection for small to large files" {
+  gendataAs 10 foo
+  gendataA 20 bar
+  do_an_update
+  # A renamed file comprises a new file and a deleted file
+  [[ 0 -eq $(grep '^F\.\.r.*/bar$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 0 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 
 @test "rename one file to two" {
@@ -111,6 +147,16 @@ do_an_update() {
   gendataA 10 foz
   gendataA 20 bar
   gendataC 20 baz  
+  do_an_update
+  # A renamed file comprises a new file and a deleted file
+  [[ 1 -eq $(grep '^F\.\.r.*/ba[rz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+}
+@test "rename two files to two, one small" {
+  gendataA 10 foo
+  gendataA 10 foz
+  gendataA 20 bar
+  gendataCs 20 baz  
   do_an_update
   # A renamed file comprises a new file and a deleted file
   [[ 1 -eq $(grep '^F\.\.r.*/ba[rz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
