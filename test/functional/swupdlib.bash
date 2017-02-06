@@ -97,7 +97,10 @@ gen_file_plain() {
   local name="$3"
 
   # Add plain text file into a bundle
-  mkdir -p $DIR/image/$ver/$bundle/$(dirname "$name")
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
   echo "$name" > $DIR/image/$ver/$bundle/"$name"
 }
 
@@ -107,7 +110,10 @@ gen_file_plain_change() {
   local name="$3"
 
   # Add plain text file into a bundle
-  mkdir -p $DIR/image/$ver/$bundle/$(dirname "$name")
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
   echo "$ver $name" > $DIR/image/$ver/$bundle/"$name"
 }
 
@@ -147,8 +153,10 @@ gen_file_plain_with_content() {
   local bundle=$2
   local name="$3"
   local content="$4"
-
-  mkdir -p $DIR/image/$ver/$bundle
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
   echo "$content" > $DIR/image/$ver/$bundle/"$name"
 }
 
