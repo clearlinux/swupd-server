@@ -49,6 +49,11 @@ gendataCs() {
   gen_file_plain_with_content "$1" test-bundle "$2" "$dataCs"
 }
 
+# Need to work out why setup doesn't do this for us
+cleanup(){
+    rm -rf $DIR/image/*/{test-bundle,full}
+}
+
 # Guts of doing an update
 do_an_update() {
   sudo $CREATE_UPDATE --osversion 10 --statedir $DIR --format 3
@@ -68,6 +73,7 @@ do_an_update() {
 
 
 @test "basic rename detection support" {
+  cleanup
   gendataA 10 foo
   gendataA 20 bar
   do_an_update
@@ -76,6 +82,7 @@ do_an_update() {
   [[ 1 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "ignore rename detection for small files" {
+  cleanup
   gendataAs 10 foo
   gendataAs 20 bar
   do_an_update
@@ -84,6 +91,7 @@ do_an_update() {
   [[ 0 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "ignore rename detection for large to small files" {
+  cleanup
   gendataA 10 foo
   gendataAs 20 bar
   do_an_update
@@ -92,6 +100,7 @@ do_an_update() {
   [[ 0 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "ignore rename detection for small to large files" {
+  cleanup
   gendataAs 10 foo
   gendataA 20 bar
   do_an_update
@@ -101,6 +110,7 @@ do_an_update() {
 }
 
 @test "rename one file to two" {
+  cleanup
   gendataA 10 foo
   gendataA 20 bar
   gendataA 20 baz
@@ -111,6 +121,7 @@ do_an_update() {
   [[ 1 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "rename two file to one" {
+  cleanup
   gendataA 10 foo
   gendataA 10 foz
   gendataA 20 baz
@@ -122,6 +133,7 @@ do_an_update() {
   [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "rename two files to two" {
+  cleanup
   gendataA 10 foo
   gendataA 10 foz
   gendataA 20 bar
@@ -133,6 +145,7 @@ do_an_update() {
 }
 
 @test "rename two files to two, one slightly different" {
+  cleanup
   gendataA 10 foo
   gendataA 10 foz
   gendataA 20 bar
@@ -144,6 +157,7 @@ do_an_update() {
 }
 
 @test "rename two files to two, one very different" {
+  cleanup
   gendataA 10 foo
   gendataA 10 foz
   gendataA 20 bar
@@ -154,6 +168,7 @@ do_an_update() {
   [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
 }
 @test "rename two files to two, one small" {
+  cleanup
   gendataA 10 foo
   gendataA 10 foz
   gendataA 20 bar
@@ -165,6 +180,7 @@ do_an_update() {
 }
 
 @test "directory name changes" {
+  cleanup
   gendataA 10 dir1/foo
   gendataA 20 dir2/foo
   do_an_update
@@ -173,6 +189,7 @@ do_an_update() {
 }
 
 @test "directory name changes small files" {
+  cleanup
   gendataAs 10 dir1/foo
   gendataAs 20 dir2/foo
   do_an_update
