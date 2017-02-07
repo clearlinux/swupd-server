@@ -226,6 +226,19 @@ do_an_update() {
     checkrenamed /dir1/foo.so.1 /dir2/foo.so.2
 }
 
+@test "rename file to dir/file" {
+    gendataA 10 foo
+    gendataA 20 foo/bar
+    do_an_update
+    checkrenamed /foo /foo/bar
+}
+# @test "rename foo/foo to foo" {
+#     gendataA 10 foo/foo
+#     gendataA 20 foo
+#     do_an_update
+#     checkrenamed /foo/foo /foo
+# }
+
 # Emacs and vi support
 # Local variables:
 # sh-indentation: 2
