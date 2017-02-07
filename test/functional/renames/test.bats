@@ -87,10 +87,9 @@ do_an_update() {
   gendataA 10 foo
   gendataA 20 bar
   do_an_update
-  # A renamed file comprises a new file and a deleted file
-  [[ 1 -eq $(grep '^F\.\.r.*/bar$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
-  [[ 1 -eq $(grep '^\.d\.r.*/foo$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  checkrenamed foo bar
 }
+
 @test "ignore rename detection for small files" {
   gendataAs 10 foo
   gendataAs 20 bar
@@ -143,9 +142,8 @@ do_an_update() {
   gendataA 20 bar
   gendataA 20 baz  
   do_an_update
-  # A renamed file comprises a new file and a deleted file
-  [[ 2 -eq $(grep '^F\.\.r.*/ba[rz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
-  [[ 2 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  checkrenamed foo bar
+  checkrenamed foz baz
 }
 
 @test "rename two files to two, one slightly different" {
@@ -154,9 +152,19 @@ do_an_update() {
   gendataA 20 bar
   gendataB 20 baz  
   do_an_update
-  # A renamed file comprises a new file and a deleted file
-  [[ 2 -eq $(grep '^F\.\.r.*/ba[rz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
-  [[ 2 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  # we don't actually know how the client we do this rename, but don't care
+  checkrenamed foo bar
+  checkrenamed foz baz
+}
+
+@test "rename two files to two, each pair slightly different" {
+  gendataA 10 foo
+  gendataB 10 foz
+  gendataA 20 bar
+  gendataB 20 baz
+  do_an_update
+  checkrenamed foo bar
+  checkrenamed foz baz
 }
 
 @test "rename two files to two, one very different" {
@@ -175,9 +183,10 @@ do_an_update() {
   gendataA 20 bar
   gendataCs 20 baz  
   do_an_update
-  # A renamed file comprises a new file and a deleted file
-  [[ 1 -eq $(grep '^F\.\.r.*/ba[rz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
-  [[ 1 -eq $(grep '^\.d\.r.*/fo[oz]$' $DIR/www/20/Manifest.test-bundle | wc -l) ]]
+  run checkrenamed foo bar
+  if [ $status -eq 1 ] ; then
+    checkrenamed foz bar
+  fi
 }
 
 @test "directory name changes" {
@@ -191,7 +200,30 @@ do_an_update() {
   gendataAs 10 dir1/foo
   gendataAs 20 dir2/foo
   do_an_update
-  ! checkrenamed /dir1/foo /dir2/foo
+  if ! checkrenamed /dir1/foo /dir2/foo ; then false ; fi
+}
+
+@test "directory name and small data changes" {
+  gendataA 10 dir1/foo
+  gendataB 20 dir2/foz
+  do_an_update
+  checkrenamed /dir1/foo /dir2/foz
+}
+
+@test "directory name and small data changes, choose same name" {
+  gendataA 10 dir1/foo
+  gendataA 10 dir1/foz
+  gendataB 20 dir2/foz
+  do_an_update
+  checkrenamed /dir1/foz /dir2/foz
+}
+
+@test "same basename test" {
+    gendataA 10 dir1/foo.so.1
+    gendataA 10 dir1/foz.so.1
+    gendataB 20 dir2/foo.so.2
+    do_an_update
+    checkrenamed /dir1/foo.so.1 /dir2/foo.so.2
 }
 
 # Emacs and vi support
