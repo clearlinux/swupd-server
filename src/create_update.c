@@ -414,8 +414,10 @@ int main(int argc, char **argv)
 		name_includes = manifest->includes;
 		while (name_includes) {
 			char *name = name_includes->data;
+			gpointer tmp = g_hash_table_lookup(new_manifests, name);
+			if (tmp)
+				manifest_includes = g_list_prepend(manifest_includes, tmp);
 			name_includes = g_list_next(name_includes);
-			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(new_manifests, name));
 		}
 		manifest->includes = manifest_includes;
 		manifest_includes = NULL;
