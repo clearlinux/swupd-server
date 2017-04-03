@@ -72,16 +72,17 @@ gen_file_to_delta() {
   local newver=$3
   local newbytes=$4
   local bundle=$5
+  local name=$6
 
   # create some random data for the original version
   mkdir -p $DIR/image/$origver/$bundle
-  dd if=/dev/urandom of=$DIR/image/$origver/$bundle/randomfile bs=1 count=$origsize
+  dd if=/dev/urandom of=$DIR/image/$origver/$bundle/$name bs=1 count=$origsize
 
   # append more random data to the end of the file in the new version
   TMP=$(mktemp foo.XXXXXX)
   mkdir -p $DIR/image/$newver/$bundle
   dd if=/dev/urandom of=$TMP bs=1 count=$newbytes
-  cat $DIR/image/$origver/$bundle/randomfile $TMP > $DIR/image/$newver/$bundle/randomfile
+  cat $DIR/image/$origver/$bundle/$name $TMP > $DIR/image/$newver/$bundle/$name
   rm $TMP
 }
 
