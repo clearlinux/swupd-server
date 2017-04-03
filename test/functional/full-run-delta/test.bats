@@ -21,7 +21,7 @@ setup() {
   track_bundle 20 included-two
   track_bundle 20 included-nested
 
-  gen_file_to_delta 10 4096 20 4 test-bundle
+  gen_file_to_delta 10 4096 20 4 test-bundle randomfile
 
   gen_file_plain 10 test-bundle foo
   gen_file_plain 10 test-bundle foobarbaz
