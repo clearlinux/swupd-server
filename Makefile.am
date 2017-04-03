@@ -109,14 +109,14 @@ TESTS = $(dist_check_SCRIPTS)
 dist_check_SCRIPTS = \
 	test/functional/basic/test.bats \
 	test/functional/delete-no-version-bump/test.bats \
-	test/functional/include-version-bump/test.bats \
-	test/functional/update/test.bats \
-	test/functional/fullfiles/test.bats \
-	test/functional/pack/test.bats \
-	test/functional/full-run/test.bats \
-	test/functional/full-run-delta/test.bats \
 	test/functional/file-name-blacklisted/test.bats \
-	test/functional/state-file/test.bats
+	test/functional/full-run-delta/test.bats \
+	test/functional/full-run/test.bats \
+	test/functional/fullfiles/test.bats \
+	test/functional/include-version-bump/test.bats \
+	test/functional/pack/test.bats \
+	test/functional/state-file/test.bats \
+	test/functional/update/test.bats
 endif
 
 if COVERAGE
