@@ -40,8 +40,8 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 	char *original, *newfile, *outfile, *dotfile, *testnewfile, *conf;
 	int ret;
 
-	if (file->is_link) {
-		return;
+	if (!file->is_file || !file->peer->is_file) {
+		return; /* only support deltas between two regular files right now */
 	}
 
 	if (file->is_deleted) {
