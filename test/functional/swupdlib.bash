@@ -106,4 +106,35 @@ gen_file_plain_change() {
   echo "$ver $name" > $DIR/image/$ver/$bundle/"$name"
 }
 
+gen_symlink_to_file() {
+  local ver=$1
+  local bundle=$2
+  local symname="$3"
+  local filename="$4"
+
+  mkdir -p $DIR/image/$ver/$bundle/$(dirname "$symname")
+  ln -s "$filename" $DIR/image/$ver/$bundle/"$symname"
+}
+
+copy_file() {
+  local origver=$1
+  local origbundle=$2
+  local origname="$3"
+  local newver=$4
+  local newbundle=$5
+  local newname="$6"
+
+  mkdir -p $DIR/image/$newver/$newbundle/$(dirname "$newname")
+  cp -a $DIR/image/$origver/$origbundle/"$origname" $DIR/image/$newver/$newbundle/"$newname"
+}
+
+# Gets the hash for file NAME in BUNDLE manifest for VER
+hash_for() {
+  local ver=$1
+  local bundle=$2
+  local name="$3"
+
+  awk -F'\t' -v NAME="$name" 'NF == 4 && $4 == NAME { print $2 }' $DIR/www/$ver/Manifest.$bundle
+}
+
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80

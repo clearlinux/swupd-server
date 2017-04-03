@@ -114,6 +114,7 @@ dist_check_SCRIPTS = \
 	test/functional/full-run/test.bats \
 	test/functional/fullfiles/test.bats \
 	test/functional/include-version-bump/test.bats \
+	test/functional/no-delta/test.bats \
 	test/functional/pack/test.bats \
 	test/functional/state-file/test.bats \
 	test/functional/update/test.bats
