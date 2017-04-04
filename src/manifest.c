@@ -582,6 +582,16 @@ void subtract_manifests(struct manifest *m1, struct manifest *m2)
 			list1 = g_list_next(list1);
 			list2 = g_list_next(list2);
 
+			/* When both files are marked deleted, skip
+			 * subtraction. Preserving the deleted entries in both
+			 * manifests is required for 'swupd update' to know
+			 * when to delete the file, because the m2 bundle may
+			 * be installed with or without the m1 bundle.
+			 */
+			if (file1->is_deleted && file2->is_deleted) {
+				continue;
+			}
+
 			if (file1->is_deleted == file2->is_deleted && file1->is_file == file2->is_file) {
 				m1->files = g_list_delete_link(m1->files, todel);
 				m1->count--;
