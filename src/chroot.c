@@ -39,7 +39,7 @@ void chroot_create_full(int newversion)
 	char *full_dir;
 
 	string_or_die(&full_dir, "%s/%i/full/", image_dir, newversion);
-	if (!access(full_dir, R_OK|X_OK)) {
+	if (!access(full_dir, R_OK | X_OK)) {
 		free(full_dir);
 		return;
 	}

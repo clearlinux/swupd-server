@@ -302,10 +302,10 @@ static bool illegal_characters(const char *filename)
 }
 
 static struct file *add_file(struct manifest *manifest,
-                             const char *entry_name,
-                             char *sub_filename,
-                             char *fullname,
-                             bool do_hash)
+			     const char *entry_name,
+			     char *sub_filename,
+			     char *fullname,
+			     bool do_hash)
 {
 	GError *err = NULL;
 	struct file *file;
@@ -334,7 +334,6 @@ static struct file *add_file(struct manifest *manifest,
 		assert(0);
 	}
 
-
 	/* if for some reason there is a file in the official build
 	 * which should not be included in the Manifest, then open a bug
 	 * to get it removed, and work around its presence by
@@ -356,9 +355,8 @@ static struct file *add_file(struct manifest *manifest,
 	}
 	manifest->files = g_list_prepend(manifest->files, file);
 	manifest->count++;
-        return file;
+	return file;
 }
-
 
 static void iterate_directory(struct manifest *manifest, char *pathprefix,
 			      char *subpath, bool do_hash)
@@ -445,7 +443,7 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 	while (dir) {
 		char *sub_filename;
 		char *fullname;
-                struct file *file;
+		struct file *file;
 
 		entry = readdir(dir);
 		if (!entry) {
@@ -463,8 +461,8 @@ static void iterate_directory(struct manifest *manifest, char *pathprefix,
 		/* takes ownership of the strings, so we don't need to free it */
 		file = add_file(manifest, entry->d_name, sub_filename, fullname, do_hash);
 
-                if (file && file->is_dir) {
-                    iterate_directory(manifest, pathprefix, file->filename, do_hash);
+		if (file && file->is_dir) {
+			iterate_directory(manifest, pathprefix, file->filename, do_hash);
 		}
 	}
 	closedir(dir);
