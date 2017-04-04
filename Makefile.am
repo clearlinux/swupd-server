@@ -117,6 +117,7 @@ dist_check_SCRIPTS = \
 	test/functional/no-delta/test.bats \
 	test/functional/pack/test.bats \
 	test/functional/state-file/test.bats \
+	test/functional/subtract-delete/test.bats \
 	test/functional/update/test.bats
 endif
 
