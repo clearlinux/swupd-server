@@ -100,6 +100,7 @@ struct manifest *alloc_manifest(int version, char *component)
 	manifest->version = version;
 	manifest->component = strdup(component);
 	manifest->format = format;
+	manifest->includes = NULL;
 
 	return manifest;
 }
