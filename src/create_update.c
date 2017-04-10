@@ -406,25 +406,40 @@ int main(int argc, char **argv)
 		GList *name_includes;
 		char *group = next_group();
 		struct manifest *manifest;
+		struct manifest *current = NULL;
 
 		if (!group) {
 			break;
 		}
 		manifest = g_hash_table_lookup(new_manifests, group);
 		name_includes = manifest->includes;
+
 		while (name_includes) {
 			char *name = name_includes->data;
 			name_includes = g_list_next(name_includes);
-			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(new_manifests, name));
+
+			current = g_hash_table_lookup(new_manifests, name);
+
+			// Avoid adding duplicate includes to the list
+			if (g_list_find(manifest_includes, current) == NULL) {
+				manifest_includes = g_list_prepend(manifest_includes, current);
+			}
 		}
 		manifest->includes = manifest_includes;
 		manifest_includes = NULL;
 		manifest = g_hash_table_lookup(old_manifests, group);
 		name_includes = manifest->includes;
+
 		while (name_includes) {
 			char *name = name_includes->data;
 			name_includes = g_list_next(name_includes);
-			manifest_includes = g_list_prepend(manifest_includes, g_hash_table_lookup(old_manifests, name));
+
+			current = g_hash_table_lookup(old_manifests, name);
+
+			// Avoid adding duplicate includes to the list
+			if (g_list_find(manifest_includes, current) == NULL) {
+				manifest_includes = g_list_prepend(manifest_includes, current);
+			}
 		}
 		manifest->includes = manifest_includes;
 	}
