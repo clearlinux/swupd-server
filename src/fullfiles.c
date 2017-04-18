@@ -249,22 +249,20 @@ static GList *get_deduplicated_fullfile_list(struct manifest *manifest)
 	struct file *tmp;
 
 	// presort by hash for easy deduplication
-	manifest->files = g_list_sort(manifest->files, file_sort_hash);
+	list = manifest->files = g_list_sort(manifest->files, file_sort_hash);
 
-	list = g_list_first(manifest->files);
-	while (prev == NULL && list != NULL) {
+	for (; list ; list = g_list_next(list)) {
 		tmp = list->data;
-		list = g_list_next(list);
 
 		// find first new file
 		if (tmp->last_change == manifest->version) {
 			prev = tmp;
 			outfiles = g_list_prepend(outfiles, tmp);
+			break;
 		}
 	}
-	while (list) {
+	for (; list ; list = g_list_next(list)) {
 		file = list->data;
-		list = g_list_next(list);
 
 		// add any new file having a unique hash
 		//FIXME: rename logic will be needed here

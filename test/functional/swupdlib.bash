@@ -40,6 +40,11 @@ EOF
   done
 }
 
+# If the variable RUN_JUST_ONE is set then only run that test
+maybeskip() {
+    [ -z "$RUN_JUST_ONE" ] || [ "$RUN_JUST_ONE" -eq "$BATS_TEST_NUMBER" ] || skip
+}
+
 set_os_release() {
   local ver=$1
   local bundle=$2
@@ -92,7 +97,10 @@ gen_file_plain() {
   local name="$3"
 
   # Add plain text file into a bundle
-  mkdir -p $DIR/image/$ver/$bundle/$(dirname "$name")
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
   echo "$name" > $DIR/image/$ver/$bundle/"$name"
 }
 
@@ -102,7 +110,10 @@ gen_file_plain_change() {
   local name="$3"
 
   # Add plain text file into a bundle
-  mkdir -p $DIR/image/$ver/$bundle/$(dirname "$name")
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
   echo "$ver $name" > $DIR/image/$ver/$bundle/"$name"
 }
 
@@ -135,6 +146,18 @@ hash_for() {
   local name="$3"
 
   awk -F'\t' -v NAME="$name" 'NF == 4 && $4 == NAME { print $2 }' $DIR/www/$ver/Manifest.$bundle
+}
+
+gen_file_plain_with_content() {
+  local ver=$1
+  local bundle=$2
+  local name="$3"
+  local content="$4"
+  case "$name" in
+      (*"/"*)	mkdir -p "$DIR/image/$ver/$bundle/${name%/*}" ;;
+      (*)	mkdir -p $DIR/image/$ver/$bundle ;;
+  esac
+  echo "$content" > $DIR/image/$ver/$bundle/"$name"
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80

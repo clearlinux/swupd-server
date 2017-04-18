@@ -21,6 +21,10 @@
  *
  */
 
+
+/* Rename detection and support.
+ */
+
 #define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
@@ -37,8 +41,55 @@
 
 #include <magic.h>
 
-static magic_t mcookie;
+static bool samefiletype(char *t1, char *t2)
+{
+	if (t1 && (t1 == t2) && *t1) {
+		return true;
+	}
+	return false;
+}
+/* For an elf binary, we get the BuildID in it, which
+ * is essentially a hash of the original loaded sections
+ * and hence is unique. This hardly makes for a 'type'
+ */
+static char *getmagic(char *filename)
+{
+	static magic_t mcookie;
+	static GStringChunk *typestore;
+	char *c2;
+	char *c1;
+	if (mcookie == NULL) {
+		mcookie = magic_open(MAGIC_NO_CHECK_COMPRESS);
+		magic_load(mcookie, NULL);
+		typestore = g_string_chunk_new(200);
+	}
 
+	c1 = (char *)magic_file(mcookie, filename);
+	if (!c1) {
+		LOG(NULL, "Cannot find file type", "%s", filename);
+		c1="";
+	}
+	c1 = strdup(c1);
+	c2 = strstr(c1, ", BuildID[");
+	if (c2) {
+		*c2 = 0;
+	}
+	c2 = strstr(c1, "not stripped");
+	if (c2) {
+		*c2 = 0;
+	}
+	c2 = strstr(c1, "stripped");
+	if (c2) {
+		*c2 = 0;
+	}
+	c2 = g_string_chunk_insert_const(typestore, c1);
+	free(c1);
+	return c2;
+}
+
+/* Assign a score roughly in the range -100 to 1000 to express how similar
+ * two files are.
+ */
 double rename_score(struct file *old, struct file *new)
 {
 	double score = 0.0;
@@ -50,6 +101,16 @@ double rename_score(struct file *old, struct file *new)
 		score += 400;
 	}
 
+	/* If the files are smaller than about 200 bytes then even a
+	 * single byte change using bsdiff is going to work out as
+	 * bigger than just shipping the new file, so stop if they are
+	 * not the same. No point in running up bsdiff just for the
+	 * sake of it.
+	 */
+	if (new->stat.st_size < BSDIFFSIZE) {
+		return -99.0;
+	}
+	
 	/* points for being in the same directory */
 	if (strcmp(old->dirname, new->dirname) == 0) {
 		score += 10;
@@ -86,12 +147,14 @@ double rename_score(struct file *old, struct file *new)
 		in--;
 	}
 
+#if 0
 	/* if both start with /boot/vmlinuz give it a boost; this is a local hack due to vmlinuz being very short */
 	if (strncmp(old->filename, "/boot/vmlinuz", 13) == 0 && strncmp(new->filename, "/boot/vmlinuz", 13) == 0) {
 		score += 80;
 	}
 
 	/* if ELF, points for sharing the same soname to the first dot */
+#endif
 
 	/* negative points for not being within 25%+/-1Kb of the same file size */
 	if (old->stat.st_size > ((new->stat.st_size * 1.25) + 1024)) {
@@ -115,66 +178,40 @@ double rename_score(struct file *old, struct file *new)
 	}
 	/* negative points for not having the same 'file' type */
 
-	if (old->filetype && new->filetype && strcmp(old->filetype, new->filetype) != 0) {
+	if (!samefiletype(old->filetype, new->filetype)) {
 		score -= 60;
 	}
 
 	return score;
 }
 
-static void precompute_file_data(struct manifest *manifest, struct file *file, int old_rename, GList *last_versions_list)
+static void precompute_file_data(int version, const char *component, struct file *file, bool fast)
 {
-	GList *item;
 	char *c1, *c2;
 	char *filename = NULL;
-	int last_change;
-	struct stat buf;
 
+	assert(file);
 	/* fill in the filename-minus-the-numbers field */
 	file->alpha_only_filename = calloc(strlen(file->filename) + 1, sizeof(char));
 
 	c1 = file->filename;
 	c2 = file->alpha_only_filename;
-	while (*c1) {
-		while (*c1 && !isalpha(*c1))
-			c1++;
-		if (!*c1) {
-			break;
-		}
-		if (c2 == NULL) {
-			break;
-		}
-		*c2 = *c1;
-		c1++;
-		c2++;
-	}
-
-	if (manifest) {
-		string_or_die(&filename, "%s/%i/%s/%s", image_dir, manifest->version, manifest->component, file->filename);
-	} else if (old_rename) {
-		item = g_list_first(last_versions_list);
-		while (item) {
-			last_change = GPOINTER_TO_INT(item->data);
-			item = g_list_next(item);
-
-			free(filename);
-			string_or_die(&filename, "%s/%i/full/%s", image_dir, last_change, file->filename);
-			if (!lstat(filename, &buf)) {
-				break;
+	if (c2) {
+		for(; *c1 ; c1++) {
+			if (isalpha(*c1)) { /* Only copy letters */
+				*c2++ = *c1;
 			}
 		}
-	} else {
-		string_or_die(&filename, "%s/%i/full/%s", image_dir, file->last_change, file->filename);
+		/* alpha_only_filename is NUL terminated by calloc */
 	}
+	string_or_die(&filename, "%s/%i/%s/%s", image_dir, version, component, file->filename);
 
 	/* make sure file->stat.st_size is valid */
 	if (file->stat.st_size == 0) {
 		int ret;
+		struct stat buf;
 
-		if (filename == NULL) {
-			printf("filename is null...impossible to stat\n");
-			assert(0);
-		}
+		assert(filename);
 		ret = lstat(filename, &buf);
 		if (!ret) {
 			file->stat.st_size = buf.st_size;
@@ -182,27 +219,19 @@ static void precompute_file_data(struct manifest *manifest, struct file *file, i
 			printf("Stat failure on %s\n", filename);
 		}
 	}
-
-	c1 = (char *)magic_file(mcookie, filename);
-	if (c1) {
-		char *c2;
-		file->filetype = strdup(c1);
-		c2 = strstr(file->filetype, "not stripped");
-		if (c2) {
-			*c2 = 0;
-		}
-		c2 = strstr(file->filetype, "stripped");
-		if (c2) {
-			*c2 = 0;
-		}
+	if (file->stat.st_size < BSDIFFSIZE) {
+		/* thing is too small, always will be regenerated
+		 * so no point in trying to figure out what kind
+		 * of file it is
+		 */
 	} else {
-		LOG(file, "Cannot find file type", "%s", filename);
+		file->filetype = getmagic(filename);
 	}
 
 	free(filename);
 
-	file->basename = strdup(basename(file->filename));
-	file->dirname = strdup(dirname(file->filename));
+	file->basename = g_path_get_basename(file->filename);
+	file->dirname = g_path_get_dirname(file->filename);
 }
 
 int file_sort_score(gconstpointer a, gconstpointer b)
@@ -222,6 +251,10 @@ int file_sort_score(gconstpointer a, gconstpointer b)
 	return 0;
 }
 
+/* compare file to each deleted file.
+ * set file->rename_peer to best matched deleted file
+ * set file->rename_score to the score
+ */
 static void score_file(GList *deleted_files, struct file *file)
 {
 	GList *list2;
@@ -246,61 +279,125 @@ static void score_file(GList *deleted_files, struct file *file)
 	}
 }
 
-void rename_detection(struct manifest *manifest, int last_change, GList *last_versions_list)
+/* delete the first element of the list and return the new head */
+static GList* del_first(GList *list)
 {
-	GList *new_files = NULL;
-	GList *deleted_files = NULL;
+	/* The first list is the pointer to the list, the second is
+	 * the pointer to what to delete */
+	return g_list_delete_link(list, list);
+}
+
+
+/* Take a list, return a new list where the filter function returns true */
+static GList* new_filtered_list(GList *list, int version, int (*f)(struct file *file, int version))
+{
+	/* make a list of new files, no peer */
+	GList *newlist = NULL;
+	list = g_list_first(list);
+	for (; list; list = g_list_next(list)) {
+		struct file *file = list->data;
+		if (f(file, version)) {
+			newlist = g_list_prepend(newlist, file);
+		}
+	}
+	return newlist;
+}
+
+#if 0
+/* Take a list, return a new list where the filter function returns true */
+static GList* new_filtered_list_version(GList *list, int version)
+{
+	/* make a list of new files, no peer */
+	GList *newlist = NULL;
+	list = g_list_first(list);
+	for (; list; list = g_list_next(list)) {
+		struct file *file = list->data;
+		if (file->last_change == version) {
+			newlist = g_list_prepend(newlist, file);
+		}
+	}
+	return newlist;
+}
+#endif
+
+static int renamed_file_p(struct file *file, int unused)
+{
+	return file->is_rename;
+}
+/* Return a new list of renamed files */
+static GList *new_list_renamed_files(GList *infiles)
+{
+	return new_filtered_list(infiles,0,renamed_file_p);
+}
+
+/* Predicate that returns true if this is a new file in the stated version */
+static int new_file_p(struct file *file, int version)
+{
+	if ((file->last_change != version) ||
+	    (file->is_deleted) ||
+	    (!file->is_file) ||
+	    (file->peer)) {
+		return 0;
+	}
+	return 1;
+}
+
+/* return a new list of the new files */
+static GList* list_new_files(struct manifest *manifest)
+{
+	GList *list = new_filtered_list(manifest->files, manifest->version, new_file_p);
+	/* call precompute_file_data for each file on list, return the list */
+	GList *ret = list;
+	for (list = g_list_first(list); list ; list = g_list_next(list)) {
+		struct file *file=list->data;
+		precompute_file_data(manifest->version, manifest->component, file, true);
+	}
+	return ret;
+}
+
+static int deleted_p(struct file *file, int version)
+{
+	if ((!file->is_deleted) ||
+	    (!file->peer) ||
+	    (file->last_change != version) ||
+	    (file->peer->is_dir || file->peer->is_link)) {
+		return 0;
+	}
+	return 1;
+}
+
+static GList* list_deleted_files(struct manifest *manifest)
+{
+	GList *list = new_filtered_list(manifest->files, manifest->version, deleted_p);
+	GList *ret = list;
+	/* call precompute_file_data for each peer of file on list */
+	for (list = g_list_first(list); list ; list = g_list_next(list)) {
+		struct file *file = list->data;
+		struct file *peer = file->peer;
+		/* Need to get things from the /full/ as we do not know
+		 * which  component may be coming from? */
+		precompute_file_data(peer->last_change, "full", peer, false);
+	}
+	return ret;
+}
+
+void rename_detection(struct manifest *manifest)
+{
+	GList *new_files;
+	GList *deleted_files;
 
 	GList *list;
 	struct file *file;
-	int old_rename = 0;
 
-	if (last_change != manifest->version) {
-		old_rename = 1;
-	}
-
-	if (mcookie == NULL) {
-		mcookie = magic_open(MAGIC_NO_CHECK_COMPRESS);
-		magic_load(mcookie, NULL);
-	}
-
-	/* make a list of new files, no peer */
-	list = g_list_first(manifest->files);
-	while (list) {
-		file = list->data;
-		list = g_list_next(list);
-		if ((file->last_change != manifest->version) ||
-		    (file->is_deleted) ||
-		    (!file->is_file) ||
-		    (file->peer)) {
-			continue;
-		}
-
-		new_files = g_list_prepend(new_files, file);
-		precompute_file_data(manifest, file, old_rename, last_versions_list);
-	}
-
-	/* if there are no new files, we're not having any renames -- early exit */
+	new_files = list_new_files(manifest);
+	
+	/* no new files --> no renames -- early exit */
 	if (!new_files) {
 		LOG(NULL, "No new files, no rename detection", "%s", manifest->component);
 		return;
 	}
-	/* make a list of newly deleted files that have a peer */
 
-	list = g_list_first(manifest->files);
-	while (list) {
-		file = list->data;
-		list = g_list_next(list);
-		if ((!file->is_deleted) ||
-		    (!file->peer) ||
-		    (file->last_change != last_change) ||
-		    (file->peer->is_dir || file->peer->is_link)) {
-			continue;
-		}
-
-		deleted_files = g_list_prepend(deleted_files, file);
-		precompute_file_data(NULL, file->peer, old_rename, last_versions_list);
-	}
+	deleted_files = list_deleted_files(manifest);
 
 	/* nothing got deleted --> no renames --> early exit */
 	if (!deleted_files) {
@@ -309,7 +406,8 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 		return;
 	}
 
-	/* for each new file, find the deleted file with the highest score, and store the score */
+	/* for each new file, find the deleted file with the highest score,
+	 * store it in file->rename_peer and store the score */
 	list = g_list_first(new_files);
 	while (list) {
 		file = list->data;
@@ -317,20 +415,24 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 		score_file(deleted_files, file);
 	}
 
+redo:
 	/* sort all new files by score */
-
+	/* walk the sorted score list.
+	 * pick the top score,
+	 * check if the score is still valid,
+	 * if not, recompute the score and resort
+	 * This is probably an O(n^3). 
+	 */
 	new_files = g_list_sort(new_files, file_sort_score);
 
-	/* pick the top score, check if the score is still valid, if not, recompute the score and resort */
-
-	while (new_files) {
+	for (; new_files ; new_files = del_first(new_files)) {
 		file = new_files->data;
+		if (file->rename_peer == NULL) {
+			continue;
+		}
 
-		if (file->rename_score < 15.0 || file->rename_peer == NULL) {
-			new_files = g_list_delete_link(new_files, new_files);
-			if (file->rename_peer) {
-				LOG(NULL, "Rename not done due to insufficient high score", "%s -> %s   score %4.1f", file->rename_peer->filename, file->filename, file->rename_score);
-			}
+		if (file->rename_score < 15.0) {
+			LOG(NULL, "Rename not done due to insufficient high score", "%s -> %s   score %4.1f", file->rename_peer->filename, file->filename, file->rename_score);
 			continue;
 		}
 
@@ -338,10 +440,8 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 			/* the candidate peer got already taken by another file! */
 			LOG(NULL, "Rename not done due to target already taken", "%s -> %s   score %4.1f", file->rename_peer->filename, file->filename, file->rename_score);
 			file->rename_peer = NULL;
-			file->rename_score = -100;
 			score_file(deleted_files, file);
-			new_files = g_list_sort(new_files, file_sort_score);
-			continue;
+			goto redo;
 		}
 
 		/* if valid and score is high enough, make the link by setting the flag and storing the hash */
@@ -349,13 +449,14 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 		LOG(NULL, "Rename detected!", "%s -> %s   score %4.1f", file->rename_peer->filename, file->filename, file->rename_score);
 
 		file->rename_peer->rename_peer = file;
-		/* must delete the file from the deleted list */
+		/* must remove the file from the deleted list */
 		deleted_files = g_list_remove(deleted_files, file->rename_peer);
 		hash_assign(file->hash, file->rename_peer->hash);
 		file->is_rename = 1;
 		file->rename_peer->is_rename = 1;
-
-		new_files = g_list_delete_link(new_files, new_files);
+		if (!deleted_files) {
+			break; 	/* No more deleted files to rename */
+		}
 
 	} /* lather, rinse, repeat until all files have a target */
 
@@ -364,65 +465,50 @@ void rename_detection(struct manifest *manifest, int last_change, GList *last_ve
 	g_list_free(deleted_files);
 }
 
-static int file_found_in_older_manifest(struct manifest *from_manifest, struct file *searched_file)
-{
-	GList *list;
-	struct file *file;
 
-	list = g_list_first(from_manifest->files);
-	while (list) {
-		file = list->data;
-		list = g_list_next(list);
-
-		if (file->is_deleted) {
-			continue;
-		}
-		if (!strcmp(file->filename, searched_file->filename)) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-void link_renames(GList *newfiles, struct manifest *from_manifest)
+/* What do we need this for?
+ *
+ * rename_detection has already set up the links in the manifest it
+ * was given.
+ *
+ */
+void link_renames(GList *newfiles, int to_version)
 {
 	GList *list1, *list2;
 	GList *targets;
 	struct file *file1, *file2;
 
-	targets = newfiles = g_list_sort(newfiles, file_sort_version);
-
-	list1 = g_list_first(newfiles);
+	targets = new_list_renamed_files(newfiles);
+	/* TODO: Check that g_list_sort is reasonable speed */
+	targets = newfiles = g_list_sort(targets, file_sort_version);
 
 	/* todo: sort newfiles and targets by hash */
 
-	while (list1) {
+	for (list1 = newfiles; list1; list1 = g_list_next(list1)) {
 		file1 = list1->data;
-		list1 = g_list_next(list1);
 
-		if ((file1->peer || !file1->is_rename) ||
-		    (file1->is_deleted)) {
+		if (file1->peer || file1->is_deleted) {
 			continue;
 		}
-		/* now, file1 is the new file that got renamed. time to search the rename targets */
+		/* now, file1 is the new file that got renamed.
+		 * time to search the rename targets */
 		list2 = g_list_first(targets);
-		while (list2) {
+		for (; list2; list2 = g_list_next(list2)) {
 			file2 = list2->data;
-			list2 = g_list_next(list2);
-
-			if ((!file2->peer || !file2->is_rename) ||
+			/* This is like deleted_p but not quite */
+			/* deleted_p returns false for directories and links */
+			if (!file2->peer ||
 			    (!file2->is_deleted) ||
-			    (!file_found_in_older_manifest(from_manifest, file2))) {
+			    (file2->last_change != to_version)) {
 				continue;
 			}
 			if (hash_compare(file2->hash, file1->hash)) {
 				file1->rename_peer = file2->peer;
 				file1->peer = file2->peer;
 				file2->peer->rename_peer = file1;
-				list2 = NULL;
+				break;
 			}
 		}
 	}
-	free(from_manifest);
+	g_list_free(targets);
 }

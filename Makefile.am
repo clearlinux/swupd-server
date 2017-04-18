@@ -120,6 +120,11 @@ dist_check_SCRIPTS = \
 	test/functional/state-file/test.bats \
 	test/functional/subtract-delete/test.bats \
 	test/functional/update/test.bats
+
+if RENAMES
+dist_check_SCRIPTS += \
+	test/functional/renames/test.bats
+endif
 endif
 
 if COVERAGE
