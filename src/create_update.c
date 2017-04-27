@@ -332,8 +332,6 @@ int main(int argc, char **argv)
 	}
 
 	apply_heuristics(new_full);
-#warning disabled rename detection for some simplicity
-	// rename_detection(new_full);
 
 	print_elapsed_time("full manifest creation", &previous_time, &current_time);
 
@@ -365,13 +363,12 @@ int main(int argc, char **argv)
 		apply_heuristics(new_core);
 		/* Step 3c: ... else save the manifest */
 		type_change_detection(new_core);
-
-#warning disabled rename detection for some simplicity
-		/* Detect renamed files specifically for each pack */
-		// rename_detection(...);
-
+#ifdef RENAMES
+		/* Detect renamed files specifically for os-core */
+		rename_detection(new_core);
+#endif
 		old_deleted = remove_old_deleted_files(old_core, new_core);
-		sort_manifest_by_version(new_core);
+		sort_manifest_by_version(new_core); /* sorts by filename */
 		newfiles = prune_manifest(new_core);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");
@@ -486,7 +483,10 @@ int main(int argc, char **argv)
 			newm->version = oldm->version;
 		} else {
 			apply_heuristics(newm);
-#warning missing rename_detection here
+#ifdef RENAMES
+			/* Detect renamed files specifically for this bundle */
+			rename_detection(newm);
+#endif
 			/* Step 6b: otherwise, write out the manifest */
 			old_deleted = remove_old_deleted_files(oldm, newm);
 			sort_manifest_by_version(newm);

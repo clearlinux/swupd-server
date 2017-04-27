@@ -65,6 +65,13 @@
 #include <lzma.h>
 #endif
 
+/* Approximatly the smallest size of a pair of input files which
+ * differ by a single bit that bsdiff can produce a more compact
+ * deltafile. Files smaller than this are always marked as different.
+ * See the magic 200 value in the bsdiff/src/diff.c code.
+ */
+#define BSDIFFSIZE 200
+
 struct manifest {
 	unsigned long long int format;
 	int version;
@@ -122,7 +129,7 @@ struct file {
 	double rename_score;
 	struct file *rename_peer;
 	char *alpha_only_filename; /* filename minus all numerics/etc */
-	char *filetype;
+	char *filetype;		   /* The output of 'file', truncated */
 	char *basename;
 	char *dirname;
 	/* end of rename detection fields */
@@ -218,8 +225,6 @@ extern void chroot_create_full(int newversion);
 
 extern void read_group_file(char *filename);
 extern void release_group_file(void);
-extern char *group_groups(char *group);
-extern char *group_packages(char *group);
 extern char *group_status(char *group);
 extern char *next_group(void);
 
@@ -242,8 +247,8 @@ extern int previous_version_manifest(struct manifest *mom, char *name);
 
 extern void type_change_detection(struct manifest *manifest);
 
-extern void rename_detection(struct manifest *manifest, int last_change, GList *last_versions_list);
-extern void link_renames(GList *newfiles, struct manifest *from_manifest);
+extern void rename_detection(struct manifest *manifest);
+extern void link_renames(GList *newfiles, int to_version);
 extern void __create_delta(struct file *file, int from_version, char *from_hash);
 
 extern void account_delta_hit(void);
