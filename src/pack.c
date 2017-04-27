@@ -144,7 +144,7 @@ static void prepare_pack(struct packdata *pack)
 
 	match_manifests(manifest, pack->end_manifest);
 
-	link_renames(pack->end_manifest->files, manifest);
+	link_renames(pack->end_manifest->files, pack->to);
 }
 
 static void make_pack_full_files(struct packdata *pack)
