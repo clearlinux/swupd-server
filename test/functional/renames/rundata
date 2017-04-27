@@ -1,0 +1,22 @@
+sudo rm -r logs/ web-dir/
+tar xf ~/data/test.tar 
+init_test_dir
+init_server_ini
+set_latest-ver 0
+init_groups_ini os-core test-bundle
+set_os_release 10 os-core
+track_bundle 10 os-core
+track_bundle 10 test-bundle
+set_os_release 20 os-core
+track_bundle 20 os-core
+track_bundle 20 test-bundle
+sudo $CREATE_UPDATE --osversion 10 --statedir $DIR --format 3
+sudo $MAKE_FULLFILES --statedir $DIR 10
+sudo $MAKE_PACK --statedir $DIR 0 10 os-core
+sudo $MAKE_PACK --statedir $DIR 0 10 test-bundle
+time  sudo $MAKE_PACK --statedir $DIR 0 10 test-bundle
+set_latest-ver 10
+sudo $CREATE_UPDATE --osversion 20 --statedir $DIR --format 3
+sudo $MAKE_FULLFILES --statedir $DIR 20
+sudo $MAKE_PACK --statedir $DIR  10 20  os-core
+sudo $MAKE_PACK --statedir $DIR  10 20  test-bundle
