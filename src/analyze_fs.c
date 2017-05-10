@@ -200,7 +200,7 @@ int compute_hash(struct file *file, char *filename)
 		return 0;
 	}
 
-	hash_set_zeros(key);	/* Set to 64 '0' (not '\0') characters */
+	hash_set_zeros(key); /* Set to 64 '0' (not '\0') characters */
 
 	if (file->is_link) {
 		char link[PATH_MAX];

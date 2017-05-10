@@ -251,7 +251,7 @@ static GList *get_deduplicated_fullfile_list(struct manifest *manifest)
 	// presort by hash for easy deduplication
 	list = manifest->files = g_list_sort(manifest->files, file_sort_hash);
 
-	for (; list ; list = g_list_next(list)) {
+	for (; list; list = g_list_next(list)) {
 		tmp = list->data;
 
 		// find first new file
@@ -261,7 +261,7 @@ static GList *get_deduplicated_fullfile_list(struct manifest *manifest)
 			break;
 		}
 	}
-	for (; list ; list = g_list_next(list)) {
+	for (; list; list = g_list_next(list)) {
 		file = list->data;
 
 		// add any new file having a unique hash

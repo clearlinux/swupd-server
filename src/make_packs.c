@@ -25,7 +25,6 @@
 #include <dirent.h>
 #include <errno.h>
 #include <getopt.h>
-#include <getopt.h>
 #include <glib.h>
 #include <locale.h>
 #include <stdio.h>

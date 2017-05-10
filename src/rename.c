@@ -21,7 +21,6 @@
  *
  */
 
-
 /* Rename detection and support.
  */
 
@@ -67,7 +66,7 @@ static char *getmagic(char *filename)
 	c1 = (char *)magic_file(mcookie, filename);
 	if (!c1) {
 		LOG(NULL, "Cannot find file type", "%s", filename);
-		c1="";
+		c1 = "";
 	}
 	c1 = strdup(c1);
 	c2 = strstr(c1, ", BuildID[");
@@ -197,7 +196,7 @@ static void precompute_file_data(int version, const char *component, struct file
 	c1 = file->filename;
 	c2 = file->alpha_only_filename;
 	if (c2) {
-		for(; *c1 ; c1++) {
+		for (; *c1; c1++) {
 			if (isalpha(*c1)) { /* Only copy letters */
 				*c2++ = *c1;
 			}
@@ -280,16 +279,15 @@ static void score_file(GList *deleted_files, struct file *file)
 }
 
 /* delete the first element of the list and return the new head */
-static GList* del_first(GList *list)
+static GList *del_first(GList *list)
 {
 	/* The first list is the pointer to the list, the second is
 	 * the pointer to what to delete */
 	return g_list_delete_link(list, list);
 }
 
-
 /* Take a list, return a new list where the filter function returns true */
-static GList* new_filtered_list(GList *list, int version, int (*f)(struct file *file, int version))
+static GList *new_filtered_list(GList *list, int version, int (*f)(struct file *file, int version))
 {
 	/* make a list of new files, no peer */
 	GList *newlist = NULL;
@@ -310,7 +308,7 @@ static int renamed_file_p(struct file *file, int unused)
 /* Return a new list of renamed files */
 static GList *new_list_renamed_files(GList *infiles)
 {
-	return new_filtered_list(infiles,0,renamed_file_p);
+	return new_filtered_list(infiles, 0, renamed_file_p);
 }
 
 /* Predicate that returns true if this is a new file in the stated version */
@@ -326,13 +324,13 @@ static int new_file_p(struct file *file, int version)
 }
 
 /* return a new list of the new files */
-static GList* list_new_files(struct manifest *manifest)
+static GList *list_new_files(struct manifest *manifest)
 {
 	GList *list = new_filtered_list(manifest->files, manifest->version, new_file_p);
 	/* call precompute_file_data for each file on list, return the list */
 	GList *ret = list;
-	for (list = g_list_first(list); list ; list = g_list_next(list)) {
-		struct file *file=list->data;
+	for (list = g_list_first(list); list; list = g_list_next(list)) {
+		struct file *file = list->data;
 		precompute_file_data(manifest->version, manifest->component, file, true);
 	}
 	return ret;
@@ -349,12 +347,12 @@ static int deleted_p(struct file *file, int version)
 	return 1;
 }
 
-static GList* list_deleted_files(struct manifest *manifest)
+static GList *list_deleted_files(struct manifest *manifest)
 {
 	GList *list = new_filtered_list(manifest->files, manifest->version, deleted_p);
 	GList *ret = list;
 	/* call precompute_file_data for each peer of file on list */
-	for (list = g_list_first(list); list ; list = g_list_next(list)) {
+	for (list = g_list_first(list); list; list = g_list_next(list)) {
 		struct file *file = list->data;
 		struct file *peer = file->peer;
 		/* Need to get things from the /full/ as we do not know
@@ -408,7 +406,7 @@ redo:
 	 */
 	new_files = g_list_sort(new_files, file_sort_score);
 
-	for (; new_files ; new_files = del_first(new_files)) {
+	for (; new_files; new_files = del_first(new_files)) {
 		file = new_files->data;
 		if (file->rename_peer == NULL) {
 			continue;
@@ -438,7 +436,7 @@ redo:
 		file->is_rename = 1;
 		file->rename_peer->is_rename = 1;
 		if (!deleted_files) {
-			break; 	/* No more deleted files to rename */
+			break; /* No more deleted files to rename */
 		}
 
 	} /* lather, rinse, repeat until all files have a target */
@@ -447,7 +445,6 @@ redo:
 	g_list_free(new_files);
 	g_list_free(deleted_files);
 }
-
 
 /* What do we need this for?
  *
