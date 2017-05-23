@@ -340,6 +340,17 @@ int main(int argc, char **argv)
 
 	/* Step 2: Make a manifest for the os-core set */
 	old_MoM = manifest_from_file(current_version, "MoM");
+
+	/* Verify that the new format is not older than the previous format. It
+	 * never makes sense to decrease the format number for the next build. */
+	if (format < old_MoM->format) {
+		LOG(NULL, "", "Current format (%llu) must be greater than or equal to previous format (%llu). Exiting",
+		    format, old_MoM->format);
+		printf("Current format (%llu) must be greater than or equal to previous format (%llu). Exiting\n",
+		       format, old_MoM->format);
+		goto exit;
+	}
+
 	new_MoM = alloc_manifest(newversion, "MoM");
 	old_core = manifest_from_file(manifest_subversion(old_MoM, "os-core"), "os-core");
 	new_core = sub_manifest_from_directory("os-core", newversion);
