@@ -481,7 +481,7 @@ struct manifest *full_manifest_from_directory(int version)
 
 	LOG(NULL, "Computing hashes", "for %i/full", version);
 
-	manifest = alloc_manifest(version, "full");
+	manifest = alloc_manifest(version, "full", NULL);
 
 	string_or_die(&dir, "%s/%i/full", image_dir, version);
 
@@ -557,7 +557,7 @@ struct manifest *sub_manifest_from_directory(char *component, int version)
 
 	LOG(NULL, "Creating component manifest", "for %i/%s", version, component);
 
-	manifest = alloc_manifest(version, component);
+	manifest = alloc_manifest(version, component, NULL);
 
 	string_or_die(&dir, "%s/%i/%s", image_dir, version, component);
 

@@ -92,7 +92,7 @@ int file_sort_filename(gconstpointer a, gconstpointer b)
 	return 0;
 }
 
-struct manifest *alloc_manifest(int version, char *component)
+struct manifest *alloc_manifest(int version, char *component, GList *actions)
 {
 	struct manifest *manifest;
 
@@ -104,6 +104,7 @@ struct manifest *alloc_manifest(int version, char *component)
 	manifest->version = version;
 	manifest->component = strdup(component);
 	manifest->format = format;
+	manifest->actions = actions;
 
 	return manifest;
 }
@@ -133,7 +134,7 @@ struct manifest *manifest_from_file(int version, char *component)
 	if (infile == NULL) {
 		LOG(NULL, "Cannot read manifest", "%s (%s)\n", filename, strerror(errno));
 		free(filename);
-		return alloc_manifest(version, component);
+		return alloc_manifest(version, component, NULL);
 	}
 
 	/* line 1: MANIFEST\t<version> */
@@ -193,7 +194,7 @@ struct manifest *manifest_from_file(int version, char *component)
 		}
 	}
 
-	manifest = alloc_manifest(version, component);
+	manifest = alloc_manifest(version, component, NULL);
 	manifest->format = format_number;
 	manifest->prevversion = previous;
 	manifest->includes = includes;
@@ -714,6 +715,7 @@ static int write_manifest_plain(struct manifest *manifest)
 {
 	GList *includes;
 	GList *list;
+	GList *actions;
 	struct file *file;
 	FILE *out = NULL;
 	char *base = NULL, *dir;
@@ -763,6 +765,14 @@ static int write_manifest_plain(struct manifest *manifest)
 		includes = g_list_next(includes);
 		fprintf(out, "includes:\t%s\n", sub->component);
 	}
+
+	actions = manifest->actions;
+	while (actions) {
+		char *action = actions->data;
+		fprintf(out, "actions:\t%s\n", action);
+		actions = g_list_next(actions);
+	}
+
 	fprintf(out, "\n");
 
 	list = g_list_first(manifest->files);
