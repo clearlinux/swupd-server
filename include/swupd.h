@@ -85,6 +85,8 @@ struct manifest {
 	GList *submanifests; /* as struct manifest */
 
 	GList *includes; /* struct manifests for all bundles included into this one */
+
+	GList *actions; /* post-update actions */
 };
 
 struct file;
@@ -184,7 +186,7 @@ extern GList *get_last_versions_list(int next_version, int max_versions);
 extern char *file_type_to_string(struct file *file);
 extern struct manifest *manifest_from_file(int version, char *module);
 extern void free_manifest(struct manifest *manifest);
-extern struct manifest *alloc_manifest(int version, char *module);
+extern struct manifest *alloc_manifest(int version, char *module, GList *actions);
 extern int match_manifests(struct manifest *m1, struct manifest *m2);
 extern void sort_manifest_by_version(struct manifest *manifest);
 extern bool manifest_includes(struct manifest *manifest, char *component);

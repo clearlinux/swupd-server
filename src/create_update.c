@@ -351,7 +351,14 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-	new_MoM = alloc_manifest(newversion, "MoM");
+	/* Detect a format bump and add the "update" action to the manifest
+	 * "actions:" field */
+	GList *actions = NULL;
+	if (format > old_MoM->format) {
+		actions = g_list_prepend(actions, "update");
+	}
+
+	new_MoM = alloc_manifest(newversion, "MoM", actions);
 	old_core = manifest_from_file(manifest_subversion(old_MoM, "os-core"), "os-core");
 	new_core = sub_manifest_from_directory("os-core", newversion);
 	add_component_hashes_to_manifest(new_core, new_full);
