@@ -120,7 +120,8 @@ dist_check_SCRIPTS = \
 	test/functional/pack/test.bats \
 	test/functional/state-file/test.bats \
 	test/functional/subtract-delete/test.bats \
-	test/functional/update/test.bats
+	test/functional/update/test.bats \
+	test/functional/format-bump/test.bats
 
 if RENAMES
 dist_check_SCRIPTS += \
