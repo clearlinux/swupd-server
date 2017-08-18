@@ -675,19 +675,29 @@ char *file_type_to_string(struct file *file)
 	return type;
 }
 
+/* Calculate the contentsize for the manifest based on file sizes.
+ *
+ * This should calculate the files uniquely included in this manifest, but none
+ * of its submanifests, which will allow calculation of sizes of all bundles on
+ * a system by adding all manifest->contentsizes of installed bundles.
+ *
+ * However, if two bundles not in the same include chain have overlapping
+ * content, summing the include chain of each bundle in the client will result
+ * in an over-estimation of the total size on the system. The more content is
+ * shared, the higher the over-estimation. In reality this overlap will not be
+ * large, but it is currently impossible to calculate the exact installed size
+ * using just the contentsize.
+ */
 static void compute_content_size(struct manifest *manifest)
 {
-	/* FIXME: this is a temporary implementation based on worst case */
-
 	GList *list;
 	struct file *file;
-	struct manifest *submanifest;
 
 	list = g_list_first(manifest->files);
 	while (list) {
 		file = list->data;
 		list = g_list_next(list);
-		if (!file->is_deleted && (file->last_change == manifest->version)) {
+		if (!file->is_deleted) {
 			if (file->is_file) {
 				manifest->contentsize += file->stat.st_size;
 			} else if (file->is_link) {
@@ -695,17 +705,6 @@ static void compute_content_size(struct manifest *manifest)
 			} else if (file->is_dir) {
 				manifest->contentsize += DIR_SIZE_HINT;
 			}
-		}
-	}
-
-	list = g_list_first(manifest->submanifests);
-	while (list) {
-		submanifest = list->data;
-		list = g_list_next(list);
-
-		/* Do not take into account groups not included in download content */
-		if (create_download_content_for_group(submanifest->component)) {
-			manifest->contentsize += submanifest->contentsize;
 		}
 	}
 }
