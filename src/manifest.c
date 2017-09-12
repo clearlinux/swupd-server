@@ -1032,12 +1032,13 @@ int remove_old_deleted_files(struct manifest *m1, struct manifest *m2)
  * Returns 0 when the pruned manifest no longer has new files.
  * Returns -1 on error.
  */
-int prune_manifest(struct manifest *manifest)
+int prune_manifest(struct manifest *manifest, bool *pruned)
 {
 	GList *list;
 	GList *next;
 	struct file *file;
 	int newfiles = 0;
+	*pruned = false;
 
 	/* prune some files */
 	list = g_list_first(manifest->files);
@@ -1055,6 +1056,10 @@ int prune_manifest(struct manifest *manifest)
 			// LOG(file, "Skipping deleted boot file in manifest write", "component %s", manifest->component);
 			manifest->files = g_list_delete_link(manifest->files, list);
 			manifest->count--;
+		} else if (is_debuginfo(file->filename)) {
+			manifest->files = g_list_delete_link(manifest->files, list);
+			manifest->count--;
+			*pruned = true;
 		}
 		list = next;
 	}
