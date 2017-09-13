@@ -258,6 +258,7 @@ int main(int argc, char **argv)
 
 	int exit_status = EXIT_FAILURE;
 	int ret;
+	bool pruned;
 
 	char *file_path = NULL;
 
@@ -387,7 +388,7 @@ int main(int argc, char **argv)
 #endif
 		old_deleted = remove_old_deleted_files(old_core, new_core);
 		sort_manifest_by_version(new_core); /* sorts by filename */
-		newfiles = prune_manifest(new_core);
+		newfiles = prune_manifest(new_core, &pruned);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");
 			printf("Core component has not changed (after pruning), exiting\n");
@@ -509,8 +510,8 @@ int main(int argc, char **argv)
 			old_deleted = remove_old_deleted_files(oldm, newm);
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
-			newfiles = prune_manifest(newm);
-			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
+			newfiles = prune_manifest(newm, &pruned);
+			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm) || pruned) {
 				LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
 				printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
 				if (write_manifest(newm) != 0) {
@@ -549,7 +550,7 @@ int main(int argc, char **argv)
 	maximize_to_full(new_MoM, new_full);
 
 	sort_manifest_by_version(new_full);
-	prune_manifest(new_full);
+	prune_manifest(new_full, &pruned);
 	if (write_manifest(new_full) != 0) {
 		goto exit;
 	}

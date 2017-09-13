@@ -309,3 +309,9 @@ int num_threads(float scaling)
 
 	return result;
 }
+
+bool is_debuginfo(char *filename)
+{
+	return ((strncmp(filename, "/usr/lib/debug/", 15) == 0) ||
+		(strncmp(filename, "/usr/src/debug/", 15) == 0));
+}
