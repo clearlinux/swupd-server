@@ -175,7 +175,9 @@ extern void release_configuration_data(void);
 extern char *config_image_base(void);
 extern char *config_output_dir(void);
 extern char *config_empty_dir(void);
+extern char *config_debuginfo_path(const char *path);
 extern int config_initial_version(void);
+extern bool config_ban_debuginfo(void);
 
 extern void read_current_version(char *filename);
 extern void write_new_version(char *filename, int version);
