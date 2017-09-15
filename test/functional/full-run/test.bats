@@ -40,6 +40,12 @@ setup() {
   [[ 1 -eq $(grep '/usr/share/clear/bundles$' $DIR/www/10/Manifest.os-core | wc -l) ]]
   [[ 4 -eq $(tar -tf $DIR/www/10/pack-test-bundle-from-0.tar | wc -l) ]]
   [[ 5 -eq $(tar -tf $DIR/www/10/pack-os-core-from-0.tar | wc -l) ]]
+
+  # extract test-bundle pack to make sure staged and delta are created with the
+  # correct permissions
+  sudo tar -xf $DIR/www/10/pack-test-bundle-from-0.tar --directory $DIR/www/10/
+  [[ $(stat -c %a $DIR/www/10/staged) -eq 700 ]]
+  [[ $(stat -c %a $DIR/www/10/delta) -eq 700 ]]
 }
 
 # vi: ft=sh ts=8 sw=2 sts=2 et tw=80

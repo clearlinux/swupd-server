@@ -58,11 +58,11 @@ static void empty_pack_stage(int full, int from_version, int to_version, char *m
 		// (re)create module/version/{delta,staged}
 		string_or_die(&path, "%s/%s/%i_to_%i/delta", packstage_dir, module,
 			      from_version, to_version);
-		g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
+		g_mkdir_with_parents(path, S_IRWXU);
 		free(path);
 		string_or_die(&path, "%s/%s/%i_to_%i/staged", packstage_dir, module,
 			      from_version, to_version);
-		g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
+		g_mkdir_with_parents(path, S_IRWXU);
 		free(path);
 	}
 }
@@ -79,7 +79,7 @@ static void explode_pack_stage(int from_version, int to_version, char *module)
 
 	string_or_die(&path, "%s/%s/%i_to_%i/staged", packstage_dir, module,
 		      from_version, to_version);
-	g_mkdir_with_parents(path, S_IRWXU | S_IRWXG);
+	g_mkdir_with_parents(path, S_IRWXU);
 	dir = opendir(path);
 	if (!dir) {
 		fprintf(stderr, "There are problems accessing %s, exiting\n", path);
