@@ -67,6 +67,20 @@ int config_initial_version(void)
 	return version;
 }
 
+bool config_ban_debuginfo(void)
+{
+	assert(keyfile != NULL);
+
+	return g_key_file_get_boolean(keyfile, "Debuginfo", "banned", NULL);
+}
+
+char *config_debuginfo_path(const char *comp)
+{
+	assert(keyfile != NULL);
+
+	return g_key_file_get_value(keyfile, "Debuginfo", comp, NULL);
+}
+
 bool read_configuration_file(char *filename)
 {
 	GError *error = NULL;
