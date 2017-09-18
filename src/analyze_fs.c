@@ -305,32 +305,6 @@ static bool illegal_characters(const char *filename)
 	return false;
 }
 
-static bool illegal_path(const char *path)
-{
-	bool ret = false;
-	char *lib;
-	char *src;
-
-	lib = config_debuginfo_path("lib");
-	src = config_debuginfo_path("src");
-
-	// Don't allow debuginfo into the manifests
-	if (lib && (strncmp(path, lib, strlen(lib)) == 0)) {
-		ret = true;
-		goto out;
-	}
-
-	if (src && (strncmp(path, src, strlen(src)) == 0)) {
-		ret = true;
-		goto out;
-	}
-
-out:
-	free(lib);
-	free(src);
-	return ret;
-}
-
 static struct file *add_file(struct manifest *manifest,
 			     const char *entry_name,
 			     char *sub_filename,
@@ -340,7 +314,7 @@ static struct file *add_file(struct manifest *manifest,
 	GError *err = NULL;
 	struct file *file;
 
-	if (config_ban_debuginfo() && illegal_path(sub_filename)) {
+	if (config_ban_debuginfo() && file_is_debuginfo(sub_filename)) {
 		printf("WARNING: File %s is banned ...skipping.\n", sub_filename);
 		free(sub_filename);
 		free(fullname);

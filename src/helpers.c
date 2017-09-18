@@ -309,3 +309,31 @@ int num_threads(float scaling)
 
 	return result;
 }
+
+/* This function is called when configuration specifies a ban on debuginfo files
+ * from manifests. Returns true if the passed file path matches the src or lib
+ * debuginfo configuration. */
+bool file_is_debuginfo(const char *path)
+{
+	bool ret = false;
+	char *lib;
+	char *src;
+
+	lib = config_debuginfo_path("lib");
+	src = config_debuginfo_path("src");
+
+	if (lib && (strncmp(path, lib, strlen(lib)) == 0)) {
+		ret = true;
+		goto out;
+	}
+
+	if (src && (strncmp(path, src, strlen(src)) == 0)) {
+		ret = true;
+		goto out;
+	}
+
+out:
+	free(lib);
+	free(src);
+	return ret;
+}

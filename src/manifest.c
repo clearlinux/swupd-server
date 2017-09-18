@@ -1055,6 +1055,14 @@ int prune_manifest(struct manifest *manifest)
 			// LOG(file, "Skipping deleted boot file in manifest write", "component %s", manifest->component);
 			manifest->files = g_list_delete_link(manifest->files, list);
 			manifest->count--;
+		} else if (config_ban_debuginfo() && file_is_debuginfo(file->filename)) {
+			/* The configuration option to ban debuginfo from the manifests was
+			 * set in server.ini via the [Debuginfo][banned] option. Although
+			 * debuginfo additions are banned via analyze_fs, prune it here
+			 * to insure mistakenly included debuginfo from old versions is
+			 * removed from the manifests. */
+			manifest->files = g_list_delete_link(manifest->files, list);
+			manifest->count--;
 		}
 		list = next;
 	}
