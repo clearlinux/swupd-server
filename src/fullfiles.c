@@ -50,7 +50,6 @@ static void create_fullfile(struct file *file)
 	struct stat sbuf;
 	char *empty, *indir, *outdir;
 	char *param1, *param2;
-	int stderrfd;
 
 	if (file->is_deleted) {
 		return; /* file got deleted -> by definition we cannot tar it up */
@@ -98,17 +97,13 @@ static void create_fullfile(struct file *file)
 		char *const tarcfcmd[] = { TAR_COMMAND, "-C", dir, TAR_PERM_ATTR_ARGS_STRLIST, "-cf", "-", param1, param2, NULL };
 		char *const tarxfcmd[] = { TAR_COMMAND, "-C", rename_tmpdir, TAR_PERM_ATTR_ARGS_STRLIST, "-xf", "-", NULL };
 
-		stderrfd = open("/dev/null", O_WRONLY);
-		if (stderrfd == -1) {
-			LOG(NULL, "Failed to open /dev/null", "");
-			assert(0);
-		}
-		if (system_argv_pipe(tarcfcmd, -1, stderrfd, tarxfcmd, -1, stderrfd) != 0) {
+		int tarcmdresult = system_argv_pipe(tarcfcmd, tarxfcmd);
+		if (tarcmdresult != 0) {
+			LOG(NULL, "Tar command for copying directory full file failed with code %d", tarcmdresult);
 			assert(0);
 		}
 		free(param1);
 		free(param2);
-		close(stderrfd);
 
 		string_or_die(&rename_source, "%s/%s", rename_tmpdir, base);
 		string_or_die(&rename_target, "%s/%s", rename_tmpdir, file->hash);

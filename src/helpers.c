@@ -149,130 +149,117 @@ void concat_str_array(char **output, char *const argv[])
 	}
 }
 
+int system_argv_pipe(char *const lhscmd[], char *const rhscmd[])
+{
+	return system_argv_pipe_fd(-1, -1, lhscmd, -1, -1, rhscmd);
+}
+
+int system_argv_pipe_fd(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
+			int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[])
+{
+	pid_t monitorpid = fork();
+	if (monitorpid == -1) {
+		LOG(NULL, "Failed to create child process to monitor pipe between", "command %s and command %s", lhscmd[0], rhscmd[0]);
+		return -1;
+	} else if (monitorpid == 0) {
+		pipe_monitor(lnewstdinfd, lnewstderrfd, lhscmd, rnewstdoutfd, rnewstderrfd, rhscmd);
+	}
+	return wait_process_terminate(monitorpid);
+}
+
+void pipe_monitor(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
+		  int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[])
+{
+	int pipefd[2];
+	if (pipe(pipefd) == -1) {
+		LOG(NULL, "Failed to create a pipe between", "command %s and command %s", lhscmd[0], rhscmd[0]);
+		assert(0);
+	}
+
+	pid_t lhspid = system_argv_fd_nowait(lnewstdinfd, pipefd[1], lnewstderrfd, pipefd[0], lhscmd);
+	pid_t rhspid = system_argv_fd_nowait(pipefd[0], rnewstdoutfd, rnewstderrfd, pipefd[1], rhscmd);
+
+	if (close(pipefd[1]) == -1) {
+		LOG(NULL, "Could not close write end of pipe file descriptor", "%d", pipefd[1]);
+		assert(0);
+	}
+	if (close(pipefd[0]) == -1) {
+		LOG(NULL, "Could not close read end of pipe file descriptor", "%d", pipefd[0]);
+		assert(0);
+	}
+
+	int lhsresult = wait_process_terminate(lhspid);
+	int rhsresult = wait_process_terminate(rhspid);
+	exit(rhsresult != EXIT_SUCCESS ? rhsresult : lhsresult);
+}
+
 int system_argv(char *const argv[])
 {
-	int child_exit_status;
-	pid_t pid;
-	int status = -1;
-
-	pid = fork();
-
-	if (pid == 0) { /* child */
-		execvp(*argv, argv);
-		LOG(NULL, "This line must not be reached", "");
-		assert(0);
-	} else if (pid < 0) {
-		LOG(NULL, "Failed to fork a child process", "");
-		assert(0);
-	} else {
-		pid_t ws = waitpid(pid, &child_exit_status, 0);
-
-		if (ws == -1) {
-			LOG(NULL, "Failed to wait for child process", "");
-			assert(0);
-		}
-
-		if (WIFEXITED(child_exit_status)) {
-			status = WEXITSTATUS(child_exit_status);
-		} else {
-			LOG(NULL, "Child process didn't exit", "");
-			assert(0);
-		}
-
-		if (status != 0) {
-			char *cmdline = NULL;
-
-			concat_str_array(&cmdline, argv);
-			LOG(NULL, "Failed to run command:", "%s", cmdline);
-			free(cmdline);
-		}
-	}
-
-	return status;
+	return system_argv_fd(-1, -1, -1, argv);
 }
 
-int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr)
+int system_argv_fd(int newstdinfd, int newstdoutfd, int newstderrfd, char *const cmd[])
 {
-	int child_exit_status;
-	pid_t pid;
-	int status = -1;
-
-	pid = fork();
-
-	if (pid == 0) { /* child */
-		if (newstdin >= 0) {
-			if (dup2(newstdin, STDIN_FILENO) == -1) {
-				LOG(NULL, "Could not redirect stdin", "");
-				assert(0);
-			}
-			close(newstdin);
-		}
-		if (newstdout >= 0) {
-			if (dup2(newstdout, STDOUT_FILENO) == -1) {
-				LOG(NULL, "Could not redirect stdout", "");
-				assert(0);
-			}
-			close(newstdout);
-		}
-		if (newstderr >= 0) {
-			if (dup2(newstderr, STDERR_FILENO) == -1) {
-				LOG(NULL, "Could not redirect stderr", "");
-				assert(0);
-			}
-			close(newstderr);
-		}
-
-		execvp(*argv, argv);
-		LOG(NULL, "This line must not be reached", "");
-		assert(0);
-	} else if (pid < 0) {
-		LOG(NULL, "Failed to fork a child process", "");
-		assert(0);
-	} else {
-		pid_t ws = waitpid(pid, &child_exit_status, 0);
-
-		if (ws == -1) {
-			LOG(NULL, "Failed to wait for child process", "");
-			assert(0);
-		}
-
-		if (WIFEXITED(child_exit_status)) {
-			status = WEXITSTATUS(child_exit_status);
-		} else {
-			LOG(NULL, "Child process didn't exit", "");
-			assert(0);
-		}
-
-		if (status != 0) {
-			char *cmdline = NULL;
-
-			concat_str_array(&cmdline, argv);
-			LOG(NULL, "Failed to run command:", "%s", cmdline);
-			free(cmdline);
-		}
-	}
-
-	return status;
+	pid_t cmdpid = system_argv_fd_nowait(newstdinfd, newstdoutfd, newstderrfd, -1, cmd);
+	return wait_process_terminate(cmdpid);
 }
 
-int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
-		     char *const argvp2[], int stdoutp2, int stderrp2)
+pid_t system_argv_fd_nowait(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[])
 {
-	int statusp2;
-	int pipefd[2];
-
-	if (pipe(pipefd)) {
-		LOG(NULL, "Failed to create a pipe", "");
-		return -1;
+	pid_t cmdpid = fork();
+	if (cmdpid == -1) {
+		LOG(NULL, "Failed to fork to execute command", "%s", cmd[0]);
+		assert(0);
+	} else if (cmdpid == 0) {
+		exec_cmd_fd(newstdinfd, newstdoutfd, newstderrfd, closefd, cmd);
 	}
-	system_argv_fd(argvp1, stdinp1, pipefd[1], stderrp1);
-	close(pipefd[1]);
-	statusp2 = system_argv_fd(argvp2, pipefd[0], stdoutp2, stderrp2);
-	close(pipefd[0]);
+	return cmdpid;
+}
 
-	/* Returns the status of the failed process if any
-       If both processes failed returns the status of first one */
-	return statusp2;
+void exec_cmd_fd(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[])
+{
+	move_fd(newstdinfd, STDIN_FILENO);
+	move_fd(newstdoutfd, STDOUT_FILENO);
+	move_fd(newstderrfd, STDERR_FILENO);
+	if (closefd >= 0 && close(closefd) == -1) {
+		LOG(NULL, "Could not close file descriptor", "%d", closefd);
+		assert(0);
+	}
+	execvp(*cmd, cmd);
+	LOG(NULL, "Command", "%s failed", cmd[0]);
+	assert(0);
+}
+
+void move_fd(int oldfd, int newfd)
+{
+	if (oldfd < 0 || newfd < 0 || oldfd == newfd) {
+		return;
+	}
+	if (dup2(oldfd, newfd) == -1) {
+		LOG(NULL, "Could not create duplicate file descriptor", "%d from %d", newfd, oldfd);
+		assert(0);
+	}
+	if (close(oldfd) == -1) {
+		LOG(NULL, "Could not close file descriptor", "%d", oldfd);
+		assert(0);
+	}
+}
+
+int wait_process_terminate(pid_t pid)
+{
+	int status;
+	do {
+		if (waitpid(pid, &status, 0) == -1) {
+			LOG(NULL, "Failed to wait for PID", "%d", pid);
+			return -1;
+		}
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+	// Exit statuses fall in the range of [0, 255].  Make signal statuses fall in a non-overlapping range starting with 256.
+	if (WIFEXITED(status)) {
+		return WEXITSTATUS(status);
+	} else {
+		return 256 + WTERMSIG(status);
+	}
 }
 
 void check_root(void)
