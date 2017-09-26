@@ -262,10 +262,17 @@ extern FILE *fopen_exclusive(const char *filename); /* no mode, opens for write 
 extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
 extern void print_elapsed_time(const char *step, struct timeval *previous_time, struct timeval *current_time);
+extern int system_argv_pipe(char *const lhscmd[], char *const rhscmd[]);
+extern int system_argv_pipe_fd(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
+			       int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[]);
+extern void pipe_monitor(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
+			 int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[]);
 extern int system_argv(char *const argv[]);
-extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
-extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
-			    char *const argvp2[], int stdoutp2, int stderrp2);
+extern int system_argv_fd(int newstdinfd, int newstdoutfd, int newstderrfd, char *const cmd[]);
+extern pid_t system_argv_fd_nowait(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[]);
+extern void exec_cmd_fd(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[]);
+extern void move_fd(int oldfd, int newfd);
+extern int wait_process_terminate(pid_t pid);
 extern int num_threads(float scaling);
 extern bool file_is_debuginfo(const char *path);
 
