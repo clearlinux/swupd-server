@@ -184,7 +184,7 @@ double rename_score(struct file *old, struct file *new)
 	return score;
 }
 
-static void precompute_file_data(int version, const char *component, struct file *file, bool fast)
+static void precompute_file_data(int version, const char *component, struct file *file)
 {
 	char *c1, *c2;
 	char *filename = NULL;
@@ -301,7 +301,7 @@ static GList *new_filtered_list(GList *list, int version, int (*f)(struct file *
 	return newlist;
 }
 
-static int renamed_file_p(struct file *file, int unused)
+static int renamed_file_p(struct file *file, int unused __attribute__((unused)))
 {
 	return file->is_rename;
 }
@@ -331,7 +331,7 @@ static GList *list_new_files(struct manifest *manifest)
 	GList *ret = list;
 	for (list = g_list_first(list); list; list = g_list_next(list)) {
 		struct file *file = list->data;
-		precompute_file_data(manifest->version, manifest->component, file, true);
+		precompute_file_data(manifest->version, manifest->component, file);
 	}
 	return ret;
 }
@@ -357,7 +357,7 @@ static GList *list_deleted_files(struct manifest *manifest)
 		struct file *peer = file->peer;
 		/* Need to get things from the /full/ as we do not know
 		 * which  component may be coming from? */
-		precompute_file_data(peer->last_change, "full", peer, false);
+		precompute_file_data(peer->last_change, "full", peer);
 	}
 	return ret;
 }
