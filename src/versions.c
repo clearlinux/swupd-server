@@ -235,8 +235,7 @@ GList *get_last_versions_list(int next_version, int max_versions)
 	DIR *dir;
 	GList *list = NULL;
 	GList *cur_item, *next_item;
-	struct dirent entry;
-	struct dirent *result;
+	struct dirent *entry;
 	struct stat stat;
 	char *filename = NULL;
 	int idx, build_num, build_type, jump_point;
@@ -249,13 +248,13 @@ GList *get_last_versions_list(int next_version, int max_versions)
 		return NULL;
 	}
 
-	while (readdir_r(dir, &entry, &result) == 0 && result != NULL) {
-		if (strspn(entry.d_name, "0123456789") != strlen(entry.d_name)) {
+	while ((entry = readdir(dir))) {
+		if (strspn(entry->d_name, "0123456789") != strlen(entry->d_name)) {
 			continue;
 		}
 
 		free(filename);
-		string_or_die(&filename, "%s/%s", staging_dir, entry.d_name);
+		string_or_die(&filename, "%s/%s", staging_dir, entry->d_name);
 
 		if (lstat(filename, &stat)) {
 			LOG(NULL, "lstat failed", "path= %s, strerror= %s",
@@ -267,11 +266,11 @@ GList *get_last_versions_list(int next_version, int max_versions)
 			continue;
 		}
 
-		if (atoi(entry.d_name) >= next_version) {
+		if (atoi(entry->d_name) >= next_version) {
 			continue;
 		}
 
-		list = g_list_prepend(list, GINT_TO_POINTER(atoi(entry.d_name)));
+		list = g_list_prepend(list, GINT_TO_POINTER(atoi(entry->d_name)));
 	}
 	free(filename);
 	closedir(dir);
