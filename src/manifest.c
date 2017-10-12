@@ -751,7 +751,6 @@ static int write_manifest_plain(struct manifest *manifest)
 	fprintf(out, "version:\t%i\n", manifest->version);
 	fprintf(out, "previous:\t%i\n", manifest->prevversion);
 	fprintf(out, "filecount:\t%i\n", manifest->count);
-	fprintf(out, "timestamp:\t%i\n", (int)time(NULL));
 	compute_content_size(manifest);
 	fprintf(out, "contentsize:\t%llu\n", (long long unsigned int)manifest->contentsize);
 	includes = manifest->includes;
