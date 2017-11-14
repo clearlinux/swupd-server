@@ -151,7 +151,13 @@ void populate_file_struct(struct file *file, char *filename)
 	ret = lstat(filename, &stat);
 	if (ret < 0) {
 		LOG(NULL, "stat error ", "%s: %s", filename, strerror(errno));
-		file->is_deleted = 1;
+		/* delete the file if it isn't found and isn't a boot file,
+		 * mark as ghosted if this is a boot file */
+		if (file->is_boot) {
+			file->is_ghosted = 1;
+		} else {
+			file->is_deleted = 1;
+		}
 		return;
 	}
 	file->stat.st_mode = stat.st_mode;

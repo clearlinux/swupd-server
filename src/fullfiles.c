@@ -298,6 +298,11 @@ static void submit_fullfile_tasks(GList *files)
 		file = item->data;
 		item = g_list_next(item);
 
+		/* do not push ghosted files */
+		if (file->is_ghosted) {
+			continue;
+		}
+
 		ret = g_thread_pool_push(threadpool, file, &err);
 		if (ret == FALSE) {
 			printf("GThread create_fullfile_task push error\n");
