@@ -127,6 +127,7 @@ dist_check_SCRIPTS = \
 
 if RENAMES
 dist_check_SCRIPTS += \
+	test/functional/orphaned-renames/test.bats \
 	test/functional/renames/test.bats
 endif
 endif
