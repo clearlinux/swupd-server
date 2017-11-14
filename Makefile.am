@@ -116,6 +116,7 @@ dist_check_SCRIPTS = \
 	test/functional/full-run-delta/test.bats \
 	test/functional/full-run/test.bats \
 	test/functional/fullfiles/test.bats \
+	test/functional/ghosting/test.bats \
 	test/functional/include-version-bump/test.bats \
 	test/functional/includes-deduplicate/test.bats \
 	test/functional/no-delta/test.bats \
