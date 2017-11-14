@@ -236,6 +236,16 @@ static int check_group_file(void)
 	return ret;
 }
 
+static bool both_ghosted(struct file *file1, struct file *file2)
+{
+	return (file1->is_ghosted && file2->is_ghosted);
+}
+
+static bool both_deleted(struct file *file1, struct file *file2)
+{
+	return (file1->is_deleted && file2->is_deleted);
+}
+
 int main(int argc, char **argv)
 {
 	struct manifest *new_core = NULL;
@@ -252,6 +262,7 @@ int main(int argc, char **argv)
 	GList *manifests_last_versions_list = NULL;
 	int newfiles = 0;
 	int old_deleted = 0;
+	int old_ghosted = 0;
 
 	struct timeval current_time;
 	struct timeval previous_time;
@@ -325,10 +336,16 @@ int main(int argc, char **argv)
 	apply_heuristics(new_full);
 	match_manifests(old_full, new_full);
 
-	old_deleted = remove_old_deleted_files(old_full, new_full);
+	old_deleted = remove_deprecated_files(old_full, new_full, both_deleted);
 	if (old_deleted > 0) {
 		LOG(NULL, "", "Old deleted files (%d) removed from full manifest", old_deleted);
 		printf("Old deleted files (%d) removed from full manifest\n", old_deleted);
+	}
+
+	old_ghosted = remove_deprecated_files(old_full, new_full, both_ghosted);
+	if (old_ghosted > 0) {
+		LOG(NULL, "", "Old ghosted files (%d) removed from full manifest", old_ghosted);
+		printf("Old ghosted files (%d) removed from full manifest", old_ghosted);
 	}
 
 	apply_heuristics(new_full);
@@ -385,7 +402,8 @@ int main(int argc, char **argv)
 		/* Detect renamed files specifically for os-core */
 		rename_detection(new_core);
 #endif
-		old_deleted = remove_old_deleted_files(old_core, new_core);
+		old_deleted = remove_deprecated_files(old_core, new_core, both_deleted);
+		old_ghosted = remove_deprecated_files(old_core, new_core, both_ghosted);
 		sort_manifest_by_version(new_core); /* sorts by filename */
 		newfiles = prune_manifest(new_core);
 		if (newfiles <= 0) {
@@ -393,8 +411,8 @@ int main(int argc, char **argv)
 			printf("Core component has not changed (after pruning), exiting\n");
 			goto exit;
 		}
-		LOG(NULL, "", "Core component has changes (%d new, %d deleted), writing out new manifest", newfiles, old_deleted);
-		printf("Core component has changes (%d new, %d deleted), writing out new manifest\n", newfiles, old_deleted);
+		LOG(NULL, "", "Core component has changes (%d new, %d deleted, %d ghosted), writing out new manifest", newfiles, old_deleted, old_ghosted);
+		printf("Core component has changes (%d new, %d deleted, %d ghosted), writing out new manifest\n", newfiles, old_deleted, old_ghosted);
 		if (write_manifest(new_core) != 0) {
 			LOG(NULL, "", "Core component manifest write failed");
 			printf("Core component manifest write failed\n");
@@ -506,13 +524,14 @@ int main(int argc, char **argv)
 			rename_detection(newm);
 #endif
 			/* Step 6b: otherwise, write out the manifest */
-			old_deleted = remove_old_deleted_files(oldm, newm);
+			old_deleted = remove_deprecated_files(oldm, newm, both_deleted);
+			old_ghosted = remove_deprecated_files(oldm, newm, both_ghosted);
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
 			newfiles = prune_manifest(newm);
-			if (newfiles > 0 || old_deleted > 0 || changed_includes(oldm, newm)) {
-				LOG(NULL, "", "%s component has changes (%d new, %d deleted), writing out new manifest", group, newfiles, old_deleted);
-				printf("%s component has changes (%d new, %d deleted), writing out new manifest\n", group, newfiles, old_deleted);
+			if (newfiles > 0 || old_deleted > 0 || old_ghosted > 0 || changed_includes(oldm, newm)) {
+				LOG(NULL, "", "%s component has changes (%d new, %d deleted, %d ghosted), writing out new manifest", group, newfiles, old_deleted, old_ghosted);
+				printf("%s component has changes (%d new, %d deleted, %d ghosted), writing out new manifest\n", group, newfiles, old_deleted, old_ghosted);
 				if (write_manifest(newm) != 0) {
 					LOG(NULL, "", "%s component manifest write failed", group);
 					printf("%s component manifest write failed\n", group);

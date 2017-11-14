@@ -240,10 +240,22 @@ struct manifest *manifest_from_file(int version, char *component)
 			assert(0); /* unknown file type */
 		}
 
-		if (c[1] == 'd') {
+		switch (c[1]) {
+		case 'd':
+			/* file is deleted */
 			file->is_deleted = 1;
-		} else if (c[1] != '.') {
-			assert(0); /* unknown deleted status */
+			break;
+		case 'g':
+			/* file is ghosted */
+			file->is_ghosted = 1;
+			break;
+		case '.':
+			/* no flag at this index */
+			break;
+		default:
+			/* unknown deleted status */
+			LOG(NULL, "Invalid flag at index 1", "%s", c[1]);
+			assert(0);
 		}
 
 		if (c[2] == 'C') {
@@ -428,14 +440,19 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 			file3->is_config = file1->is_config;
 			file3->is_state = file1->is_state;
 			file3->is_boot = file1->is_boot;
+			/* ghost deleted boot files */
+			file3->is_ghosted = file1->is_boot && file1->is_deleted;
 
-			if (!file1->is_deleted) {
-				file3->last_change = m2->version;
-			} else {
-				file3->last_change = file1->last_change;
+			if (file3->is_ghosted || file1->is_deleted) {
+				/* if the new file is ghosted or the file was deleted, preserve
+				 * hash (all zeros if file1->is_deleted) and rename status */
 				file3->is_rename = file1->is_rename;
 				hash_assign(file1->hash, file3->hash);
 			}
+
+			/* for deleted files last_change remains the same.
+			 * otherwise last change is now */
+			file3->last_change = file1->is_deleted ? file1->last_change : m2->version;
 
 			file3->peer = file1;
 			file1->peer = file3;
@@ -656,6 +673,10 @@ char *file_type_to_string(struct file *file)
 
 	if (file->is_deleted) {
 		type[1] = 'd';
+	}
+
+	if (file->is_ghosted) {
+		type[1] = 'g';
 	}
 
 	if (file->is_config) {
@@ -968,7 +989,7 @@ bool changed_includes(struct manifest *old, struct manifest *new)
  *
  * Note: this function should be called after match_manifests().
  */
-int remove_old_deleted_files(struct manifest *m1, struct manifest *m2)
+int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*compfunc)(struct file *file1, struct file *file2))
 {
 	GList *list1, *list2;
 	struct file *file1, *file2;
@@ -1006,7 +1027,9 @@ int remove_old_deleted_files(struct manifest *m1, struct manifest *m2)
 
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
-			if (file1->is_deleted && file2->is_deleted) {
+			/* use the comparison function passed in to determine if this file
+			 * should be removed */
+			if (compfunc(file1, file2)) {
 				GList *to_delete = list2;
 				list1 = g_list_next(list1);
 				list2 = g_list_next(list2);
@@ -1059,10 +1082,10 @@ int prune_manifest(struct manifest *manifest)
 			manifest->files = g_list_delete_link(manifest->files, list);
 			manifest->count--;
 		} else if (file->is_boot && file->is_deleted) {
-			// only expose the current best boot files, a client side entity can manage /boot's actual contents
-			// LOG(file, "Skipping deleted boot file in manifest write", "component %s", manifest->component);
-			manifest->files = g_list_delete_link(manifest->files, list);
-			manifest->count--;
+			/* mark boot files that are going away as ghosted, these will be
+			 * cleaned up with the next update */
+			file->is_deleted = 0;
+			file->is_ghosted = 1;
 		} else if (config_ban_debuginfo() && file_is_debuginfo(file->filename)) {
 			/* The configuration option to ban debuginfo from the manifests was
 			 * set in server.ini via the [Debuginfo][banned] option. Although

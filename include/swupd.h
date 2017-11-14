@@ -117,6 +117,10 @@ struct file {
 	unsigned int is_file : 1;
 	unsigned int is_link : 1;
 	unsigned int is_deleted : 1;
+	/* a ghosted file is treated as deleted so that it can be used as a rename,
+	 * but is not actually deleted in the client due to a 3rd-party program
+	 * cleaning it up. This happens with boot files managed by a boot manager */
+	unsigned int is_ghosted : 1;
 	unsigned int is_manifest : 1;
 
 	/* and these are modifiers */
@@ -194,7 +198,7 @@ extern void sort_manifest_by_version(struct manifest *manifest);
 extern bool manifest_includes(struct manifest *manifest, char *component);
 extern bool changed_includes(struct manifest *old, struct manifest *new);
 extern int prune_manifest(struct manifest *manifest);
-extern int remove_old_deleted_files(struct manifest *m1, struct manifest *m2);
+extern int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*compfunc)(struct file *, struct file *));
 extern void create_manifest_delta(int oldversion, int newversion, char *module);
 extern void create_manifest_deltas(struct manifest *manifest, GList *last_versions_list);
 extern void subtract_manifests_frontend(struct manifest *m1, struct manifest *m2);
