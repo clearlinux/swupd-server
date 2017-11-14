@@ -1045,6 +1045,14 @@ int prune_manifest(struct manifest *manifest)
 		next = g_list_next(list);
 		file = list->data;
 
+		/* if the file is marked as deleted and renamed it is a renamed_from
+		 * file. If the rename_peer field is still NULL then it has been
+		 * orphaned. Prune these files */
+		if (file->is_deleted && file->is_rename && !file->rename_peer) {
+			manifest->files = g_list_delete_link(manifest->files, list);
+			manifest->count--;
+		}
+
 		if (OS_IS_STATELESS && (!file->is_deleted) && (file->is_config)) {
 			// toward being a stateless OS
 			LOG(file, "Skipping config file in manifest write", "component %s", manifest->component);
