@@ -446,6 +446,48 @@ redo:
 	g_list_free(deleted_files);
 }
 
+void final_link(GList *files)
+{
+	GList *list1, *list2;
+	struct file *file1, *file2;
+
+	list1 = new_list_renamed_files(files);
+	list1 = list2 = g_list_sort(list1, file_sort_version);
+
+	for (; list1; list1 = g_list_next(list1)) {
+		file1 = list1->data;
+		/* do not re-link already-linked renames */
+		if (file1->rename_peer != NULL) {
+			continue;
+		}
+
+		/* check the rest of the list */
+		list2 = g_list_next(list1);
+		for (; list2; list2 = g_list_next(list2)) {
+			file2 = list2->data;
+			/* must be the same version to link */
+			if (file1->last_change != file2->last_change) {
+				continue;
+			}
+
+			/* need one and only one to be deleted to link as this
+			 * indicates a renamed-from/renamed-to relationship
+			 * (.d.r -> F..r) */
+			if (file1->is_deleted == file2->is_deleted) {
+				continue;
+			}
+
+			/* must have same hash to link */
+			if (!hash_compare(file2->hash, file1->hash)) {
+				continue;
+			}
+
+			file1->rename_peer = file2;
+			file2->rename_peer = file1;
+		}
+	}
+}
+
 /* What do we need this for?
  *
  * rename_detection has already set up the links in the manifest it

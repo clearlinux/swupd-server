@@ -1050,6 +1050,32 @@ int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*com
 	return count;
 }
 
+/* Performs a final link of renames in the manifest to catch any renames from
+ * old versions and then removes any orphaned renames */
+void clean_renames(struct manifest *manifest)
+{
+	GList *list;
+	struct file *file;
+
+	/* make sure all renames are linked, this is necessary for renames
+	 * from old manifests that carry over to the current one */
+	final_link(manifest->files);
+
+	list = g_list_first(manifest->files);
+	while (list) {
+		file = list->data;
+		/* if the file is marked as deleted and renamed it is a
+		 * renamed-from file. If the rename_peer field is still NULL
+		 * then it has been orphaned. Mark these as deleted */
+		if (file->is_deleted && file->is_rename && !file->rename_peer) {
+			hash_set_zeros(file->hash);
+			file->is_rename = 0;
+		}
+
+		list = g_list_next(list);
+	}
+}
+
 /* Conditionally remove some things from a manifest.
  * Returns > 0 when the pruned manifest has new files.
  * Returns 0 when the pruned manifest no longer has new files.
@@ -1067,14 +1093,6 @@ int prune_manifest(struct manifest *manifest)
 	while (list) {
 		next = g_list_next(list);
 		file = list->data;
-
-		/* if the file is marked as deleted and renamed it is a renamed_from
-		 * file. If the rename_peer field is still NULL then it has been
-		 * orphaned. Prune these files */
-		if (file->is_deleted && file->is_rename && !file->rename_peer) {
-			manifest->files = g_list_delete_link(manifest->files, list);
-			manifest->count--;
-		}
 
 		if (OS_IS_STATELESS && (!file->is_deleted) && (file->is_config)) {
 			// toward being a stateless OS

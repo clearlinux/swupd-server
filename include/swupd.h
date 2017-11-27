@@ -198,6 +198,7 @@ extern void sort_manifest_by_version(struct manifest *manifest);
 extern bool manifest_includes(struct manifest *manifest, char *component);
 extern bool changed_includes(struct manifest *old, struct manifest *new);
 extern int prune_manifest(struct manifest *manifest);
+extern void clean_renames(struct manifest *manifest);
 extern int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*compfunc)(struct file *, struct file *));
 extern void create_manifest_delta(int oldversion, int newversion, char *module);
 extern void create_manifest_deltas(struct manifest *manifest, GList *last_versions_list);
@@ -257,6 +258,7 @@ extern void type_change_detection(struct manifest *manifest);
 
 extern void rename_detection(struct manifest *manifest);
 extern void link_renames(GList *newfiles, int to_version);
+extern void final_link(GList *files);
 extern void __create_delta(struct file *file, int from_version, char *from_hash);
 
 extern void account_delta_hit(void);
