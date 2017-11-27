@@ -405,6 +405,8 @@ int main(int argc, char **argv)
 		old_deleted = remove_deprecated_files(old_core, new_core, both_deleted);
 		old_ghosted = remove_deprecated_files(old_core, new_core, both_ghosted);
 		sort_manifest_by_version(new_core); /* sorts by filename */
+		/* clean up orphaned renames by marking them as deleted */
+		clean_renames(new_core);
 		newfiles = prune_manifest(new_core);
 		if (newfiles <= 0) {
 			LOG(NULL, "", "Core component has not changed (after pruning), exiting");
@@ -528,6 +530,8 @@ int main(int argc, char **argv)
 			old_ghosted = remove_deprecated_files(oldm, newm, both_ghosted);
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
+			/* clean up orphaned renames by marking them as deleted */
+			clean_renames(newm);
 			newfiles = prune_manifest(newm);
 			if (newfiles > 0 || old_deleted > 0 || old_ghosted > 0 || changed_includes(oldm, newm)) {
 				LOG(NULL, "", "%s component has changes (%d new, %d deleted, %d ghosted), writing out new manifest", group, newfiles, old_deleted, old_ghosted);
@@ -568,6 +572,8 @@ int main(int argc, char **argv)
 	maximize_to_full(new_MoM, new_full);
 
 	sort_manifest_by_version(new_full);
+	/* clean up orphaned renames by marking them as deleted */
+	clean_renames(new_full);
 	prune_manifest(new_full);
 	if (write_manifest(new_full) != 0) {
 		goto exit;
