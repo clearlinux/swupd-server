@@ -440,8 +440,11 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 			file3->is_config = file1->is_config;
 			file3->is_state = file1->is_state;
 			file3->is_boot = file1->is_boot;
+			file3->is_ghosted = file1->is_ghosted;
 			/* ghost deleted boot files */
-			file3->is_ghosted = file1->is_boot && file1->is_deleted;
+			if (!file3->is_ghosted) {
+				file3->is_ghosted = file1->is_boot && file1->is_deleted;
+			}
 
 			if (file3->is_ghosted || file1->is_deleted) {
 				/* if the new file is ghosted or the file was deleted, preserve
@@ -983,10 +986,9 @@ bool changed_includes(struct manifest *old, struct manifest *new)
 	return false;
 }
 
-/* For a format bump, it's convenient to remove deleted files from manifests
- * that last changed prior to the format bump, since they are no longer
- * considered for deletion as part of an update.
- *
+/* Remove files deprecated in this version as identified by the compfunc
+ * function. This function can be used to remove old deleted files over a format
+ * bump and remove deprecated ghosted files.
  * Note: this function should be called after match_manifests().
  */
 int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*compfunc)(struct file *file1, struct file *file2))
@@ -1003,11 +1005,6 @@ int remove_deprecated_files(struct manifest *m1, struct manifest *m2, bool (*com
 	if (!m2) {
 		printf("No new manifest!\n");
 		return -1;
-	}
-
-	/* This is the common case, so bail early, reporting no deletions */
-	if (m1->format == m2->format) {
-		return 0;
 	}
 
 	/* At this point, the manifest formats mismatch, and it's assumed that

@@ -52,7 +52,7 @@ setup() {
   # version 20: add a new boot file
   [ 1 -eq $(grep 'F\.b\.	.*	20	/usr/lib/kernel/baz' $DIR/www/20/Manifest.full | wc -l) ]
   # version 30: old ghosted file /usr/lib/kernel/bar cleaned up
-  [ 0 -eq $(grep '10	/usr/lib/kernel/bar' $DIR/www/30/Manifest.full | wc -l) ]
+  [ 0 -eq $(grep '/usr/lib/kernel/bar' $DIR/www/30/Manifest.full | wc -l) ]
   # version 30: boot file added in version 20 ghosted
   [ 1 -eq $(grep '\.gb\.	.*	30	/usr/lib/kernel/baz' $DIR/www/30/Manifest.full | wc -l) ]
 }
