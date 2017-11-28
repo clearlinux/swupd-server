@@ -336,7 +336,12 @@ int main(int argc, char **argv)
 	apply_heuristics(new_full);
 	match_manifests(old_full, new_full);
 
-	old_deleted = remove_deprecated_files(old_full, new_full, both_deleted);
+	if (old_full->format < new_full->format) {
+		old_deleted = remove_deprecated_files(old_full, new_full, both_deleted);
+	} else {
+		old_deleted = 0;
+	}
+
 	if (old_deleted > 0) {
 		LOG(NULL, "", "Old deleted files (%d) removed from full manifest", old_deleted);
 		printf("Old deleted files (%d) removed from full manifest\n", old_deleted);
@@ -402,7 +407,12 @@ int main(int argc, char **argv)
 		/* Detect renamed files specifically for os-core */
 		rename_detection(new_core);
 #endif
-		old_deleted = remove_deprecated_files(old_core, new_core, both_deleted);
+		if (old_core->format < new_core->format) {
+			old_deleted = remove_deprecated_files(old_core, new_core, both_deleted);
+		} else {
+			old_deleted = 0;
+		}
+
 		old_ghosted = remove_deprecated_files(old_core, new_core, both_ghosted);
 		sort_manifest_by_version(new_core); /* sorts by filename */
 		/* clean up orphaned renames by marking them as deleted */
@@ -526,7 +536,12 @@ int main(int argc, char **argv)
 			rename_detection(newm);
 #endif
 			/* Step 6b: otherwise, write out the manifest */
-			old_deleted = remove_deprecated_files(oldm, newm, both_deleted);
+			if (oldm->format < newm->format) {
+				old_deleted = remove_deprecated_files(oldm, newm, both_deleted);
+			} else {
+				old_deleted = 0;
+			}
+
 			old_ghosted = remove_deprecated_files(oldm, newm, both_ghosted);
 			sort_manifest_by_version(newm);
 			type_change_detection(newm);
