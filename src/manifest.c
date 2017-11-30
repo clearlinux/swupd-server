@@ -323,6 +323,21 @@ struct manifest *manifest_from_file(int version, char *component)
 	return manifest;
 }
 
+/* do not set peer for the case where the old file was deleted and the new file
+ * was added back. This peer is normally set when the names match up and this
+ * triggers an attempt at creating a delta during pack creation. For this case
+ * where the old file is deleted or ghosted and is brought back we do not want
+ * this to be attempted, as the old file will not be present when trying to
+ * create the delta.
+ *
+ * We can go even further and not set peers for files when the old one did not
+ * exist (deleted or ghosted). It is not necessary to check the status of the
+ * new file */
+bool should_have_peer(struct file *file1, struct file *file2)
+{
+	return (!(file1->is_deleted || file1->is_ghosted));
+}
+
 void free_manifest(struct manifest *manifest)
 {
 	struct file *file;
@@ -340,6 +355,62 @@ void free_manifest(struct manifest *manifest)
 	free(manifest);
 }
 
+static bool same_file_contents(struct file *file1, struct file *file2)
+{
+	return (file1->is_dir == file2->is_dir &&
+		file1->is_link == file2->is_link &&
+		file1->is_deleted == file2->is_deleted &&
+		file1->is_file == file2->is_file &&
+		file1->is_config == file2->is_config &&
+		file1->is_state == file2->is_state &&
+		file1->is_boot == file2->is_boot &&
+		hash_compare(file1->hash, file2->hash));
+}
+
+/*
+ * Add a deleted file entry for it in the target list. However, since we're
+ * currently walking the list we HAVE to prepend the entry. Calling function
+ * should track to sort at the end.
+ */
+static void add_deleted_file(struct file *source, struct manifest *manifest)
+{
+	struct file *deleted;
+	deleted = calloc(1, sizeof(struct file));
+	if (deleted == NULL) {
+		assert(0);
+	}
+
+	deleted->filename = strdup(source->filename);
+	hash_set_zeros(deleted->hash);
+	deleted->is_deleted = 1;
+	deleted->is_config = source->is_config;
+	deleted->is_state = source->is_state;
+	deleted->is_boot = source->is_boot;
+	/* ghost deleted boot files */
+	deleted->is_ghosted = source->is_ghosted | source->is_boot & source->is_deleted;
+
+	if (deleted->is_ghosted || source->is_deleted) {
+		/* if the new file is ghosted or the file was deleted, preserve
+		 * hash (all zeros if source->is_deleted) and rename status */
+		deleted->is_rename = source->is_rename;
+		hash_assign(source->hash, deleted->hash);
+	}
+
+	/* for deleted files last_change remains the same.
+	 * otherwise last change is now */
+	deleted->last_change = source->is_deleted ? source->last_change : manifest->version;
+
+	deleted->peer = source;
+	source->peer = deleted;
+
+	/* if we are adding a deleted file we are walking the old and new
+	 * manifest files in-sync. we need to prepend this file in order to
+	 * not process it twice. This is why it is important for the calling
+	 * function to sort the list again at the end */
+	manifest->files = g_list_prepend(manifest->files, deleted);
+	manifest->count++;
+}
+
 /*
 backfill the "last changed" of each file in a manifest
 by comparing the hash against the same file in the previous manifest
@@ -354,7 +425,6 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 	struct file *file1, *file2;
 	int must_sort = 0;
 	int count = 0;
-	int first = 1;
 
 	if (!m1) {
 		printf("Matching manifests up failed: No old manifest!\n");
@@ -382,166 +452,72 @@ int match_manifests(struct manifest *m1, struct manifest *m2)
 
 		ret = strcmp(file1->filename, file2->filename);
 		if (ret == 0) {
-			if (file1->is_deleted && file2->is_deleted && file1->is_rename) {
-				file2->is_rename = file1->is_rename;
-				hash_assign(file1->hash, file2->hash);
-			}
-
-			if (hash_compare(file1->hash, file2->hash) &&
-			    file1->is_dir == file2->is_dir &&
-			    file1->is_link == file2->is_link &&
-			    file1->is_deleted == file2->is_deleted &&
-			    file1->is_file == file2->is_file &&
-			    file1->is_config == file2->is_config &&
-			    file1->is_state == file2->is_state &&
-			    file1->is_boot == file2->is_boot &&
-			    file1->last_change >= minversion) {
+			/* file is present in both manifests */
+			if (same_file_contents(file1, file2) && file1->last_change >= minversion) {
+				/* file did not change */
 				file2->last_change = file1->last_change;
 				file2->is_rename = file1->is_rename;
 			} else {
+				/* file changed */
 				account_changed_file();
-				if (first) {
-					LOG(file1, "file changed", "");
-					first = 0;
-				}
 				count++;
 			}
 
-			if (!file1->is_deleted || file2->is_deleted) {
+			/* check if these files should be peers */
+			if (should_have_peer(file1, file2)) {
 				file1->peer = file2;
 				file2->peer = file1;
 			}
 
+			/* there was a match, advance both lists */
 			list1 = g_list_next(list1);
 			list2 = g_list_next(list2);
-			continue;
-		}
-		if (first) {
-			LOG(file1, "file added? ", "(file2 is %s)", file2->filename);
-			first = 0;
-		}
-		if (ret < 0) {
-			struct file *file3;
-			/*
-			 * if we get here, file1 got deleted... what we must do
-			 * is add a file entry for it in the target list.
-			 * However, since we're currently walking the list we
-			 * HAVE to prepend the entry.. and mark for sort at the
-			 * end.
-			 */
-			file3 = calloc(1, sizeof(struct file));
-			if (file3 == NULL) {
-				assert(0);
-			}
-
-			file3->filename = strdup(file1->filename);
-			hash_set_zeros(file3->hash);
-			file3->is_deleted = 1;
-			file3->is_config = file1->is_config;
-			file3->is_state = file1->is_state;
-			file3->is_boot = file1->is_boot;
-			file3->is_ghosted = file1->is_ghosted;
-			/* ghost deleted boot files */
-			if (!file3->is_ghosted) {
-				file3->is_ghosted = file1->is_boot && file1->is_deleted;
-			}
-
-			if (file3->is_ghosted || file1->is_deleted) {
-				/* if the new file is ghosted or the file was deleted, preserve
-				 * hash (all zeros if file1->is_deleted) and rename status */
-				file3->is_rename = file1->is_rename;
-				hash_assign(file1->hash, file3->hash);
-			}
-
-			/* for deleted files last_change remains the same.
-			 * otherwise last change is now */
-			file3->last_change = file1->is_deleted ? file1->last_change : m2->version;
-
-			file3->peer = file1;
-			file1->peer = file3;
-
-			list1 = g_list_next(list1);
-			m2->files = g_list_prepend(m2->files, file3);
-			m2->count++;
+		} else if (ret < 0) {
+			/* file1 was deleted, create entry for deleted file */
+			add_deleted_file(file1, m2);
 			if (!file1->is_deleted) {
 				account_deleted_file();
 				count++;
-				if (first) {
-					LOG(file1, "file got deleted", "");
-					first = 0;
-				}
 			}
+
 			must_sort = 1;
-			continue;
+			/* advance list1 for next file */
+			list1 = g_list_next(list1);
+		} else {
+			/* if we get here, ret is > 0, which means this is a new file added */
+			/* all we do is advance the pointer */
+			account_new_file();
+			count++;
+			/* advance list2 to check against same file in list1 */
+			list2 = g_list_next(list2);
 		}
-		/* if we get here, ret is > 0, which means this is a new file added */
-		/* all we do is advance the pointer */
-		account_new_file();
-		list2 = g_list_next(list2);
-		count++;
 	}
 
 	/* now deal with the tail ends */
-	while (list1) {
+	/* deleted files from list1 */
+	for (; list1; list1 = g_list_next(list1)) {
 		file1 = list1->data;
-
-		struct file *file3;
-
-		if (first) {
-			LOG(file1, "file changed tail", "");
-			first = 0;
-		}
-		count++;
-		/*
-		 * if we get here, file1 got deleted... what we must do is add
-		 * a file entry for it in the target list.  However, since
-		 * we're currently walking the list we HAVE to prepend the
-		 * entry.. and mark for sort at the end.
-		 */
-		file3 = calloc(1, sizeof(struct file));
-		if (file3 == NULL) {
-			assert(0);
-		}
-
-		file3->filename = strdup(file1->filename);
-		hash_set_zeros(file3->hash);
-		file3->is_deleted = 1;
-		file3->is_config = file1->is_config;
-		file3->is_state = file1->is_state;
-		file3->is_boot = file1->is_boot;
-
-		if (!file1->is_deleted) {
-			file3->last_change = m2->version;
-		} else {
-			file3->last_change = file1->last_change;
-			file3->is_rename = file1->is_rename;
-			hash_assign(file1->hash, file3->hash);
-		}
-
-		file3->peer = file1;
-		file1->peer = file3;
-
-		list1 = g_list_next(list1);
-		m2->files = g_list_prepend(m2->files, file3);
-		m2->count++;
+		add_deleted_file(file1, m2);
 		if (!file1->is_deleted) {
 			account_deleted_file();
+			count++;
 		}
+
 		must_sort = 1;
 	}
 
-	while (list2) {
+	/* added files from list2 */
+	for (; list2; list2 = g_list_next(list2)) {
 		account_new_file();
-		list2 = g_list_next(list2);
-		if (first) {
-			first = 0;
-		}
 		count++;
 	}
+
+	/* finally, sort the list if necessary */
 	if (must_sort) {
 		m2->files = g_list_sort(m2->files, file_sort_filename);
 	}
 
+	/* returned count of changed files */
 	return count;
 }
 
