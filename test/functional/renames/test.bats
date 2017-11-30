@@ -47,7 +47,7 @@ gendataCs() {
 }
 
 checkrenamed(){
-    local flags sh1 ver name fromsha1="bad" tosha1
+    local flags sha1 ver name fromsha1="bad" tosha1
     # Check that $1 is renamed to $2
     exec 9< $DIR/www/20/Manifest.test-bundle
     # skip the header
@@ -58,11 +58,11 @@ checkrenamed(){
     while read -r -u9 flags sha1 ver name
     do
 	case "$flags" in
-	    (?"dr"?) [ "$name" = "$1" ] && fromsha1=$sha1 ;;
-	    (?".r"?) [ "$name" = "$2" ] && tosha1=$sha1 ;;
+	    (?"d.r") [ "$name" = "$1" ] && fromsha1=$sha1 ;;
+	    (?"..r") [ "$name" = "$2" ] && tosha1=$sha1 ;;
 	esac
     done
-    if [ "$fromsh1" = "$tosha1" ] ; then return 0 ; else return 1 ; fi
+    if [ "$fromsha1" = "$tosha1" ] ; then return 0 ; else return 1 ; fi
 }
 
 # Guts of doing an update
