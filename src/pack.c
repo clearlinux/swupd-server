@@ -138,12 +138,13 @@ static void prepare_pack(struct packdata *pack)
 		return;
 	}
 
+	/* read in manifest from file */
 	pack->end_manifest = manifest_from_file(pack->to, pack->module);
-
+	/* wipe any old packs (failed) and re-create pack directory structure */
 	empty_pack_stage(0, pack->from, pack->to, pack->module);
-
+	/* match up old and new manifests */
 	match_manifests(manifest, pack->end_manifest);
-
+	/* link renames together */
 	link_renames(pack->end_manifest->files, pack->to);
 }
 
@@ -251,6 +252,8 @@ static GList *consolidate_packs_delta_files(GList *files, struct packdata *pack)
 		file = item->data;
 		item = g_list_next(item);
 
+		/* skip old files, files without a peer, and files that are not
+		 * files, directories, or links */
 		if ((file->last_change <= pack->from) ||
 		    (!file->peer) ||
 		    (!file->is_file && !file->is_dir && !file->is_link)) {
@@ -260,7 +263,10 @@ static GList *consolidate_packs_delta_files(GList *files, struct packdata *pack)
 		string_or_die(&from, "%s/%i/delta/%i-%i-%s-%s", staging_dir, file->last_change,
 			      file->peer->last_change, file->last_change, file->peer->hash, file->hash);
 
+		/* check for existence */
 		ret = stat(from, &stat_delta);
+		/* only add if delta does not already exist and the file is not
+		 * in files */
 		if (ret && !find_file_in_list(files, file)) {
 			files = g_list_prepend(files, file);
 		}
