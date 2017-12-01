@@ -161,7 +161,10 @@ static void make_pack_full_files(struct packdata *pack)
 	while (item) {
 		file = item->data;
 		item = g_list_next(item);
-		if ((!file->peer || file->peer->is_deleted) && !file->is_deleted && !file->rename_peer) {
+		if ((!file->peer || file->peer->is_deleted) &&
+		    !file->is_deleted &&
+		    !file->rename_peer &&
+		    !file->is_ghosted) {
 			char *from, *to;
 			char *fullfrom, *fullto;
 
