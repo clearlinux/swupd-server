@@ -161,7 +161,11 @@ static void make_pack_full_files(struct packdata *pack)
 	while (item) {
 		file = item->data;
 		item = g_list_next(item);
-		if ((!file->peer || file->peer->is_deleted) && !file->is_deleted && !file->rename_peer) {
+		/* only create full files if renames or deltas are not appropriate */
+		if ((!file->peer || file->peer->is_deleted || file->peer->is_ghosted) &&
+		    !file->is_deleted &&  /* no full-files for deletes */
+		    !file->is_ghosted &&  /* no full-files for ghosts */
+		    !file->rename_peer) { /* no full-files for renames */
 			char *from, *to;
 			char *fullfrom, *fullto;
 
