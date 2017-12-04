@@ -87,7 +87,7 @@ do_an_update() {
   gendataA 10 foo
   gendataA 20 bar
   do_an_update
-  checkrenamed foo bar
+  checkrenamed /foo /bar
 }
 
 @test "ignore rename detection for small files" {
@@ -142,8 +142,8 @@ do_an_update() {
   gendataA 20 bar
   gendataA 20 baz  
   do_an_update
-  checkrenamed foo bar
-  checkrenamed foz baz
+  checkrenamed /foo /bar
+  checkrenamed /foz /baz
 }
 
 @test "rename two files to two, one slightly different" {
@@ -153,8 +153,8 @@ do_an_update() {
   gendataB 20 baz  
   do_an_update
   # we don't actually know how the client we do this rename, but don't care
-  checkrenamed foo bar
-  checkrenamed foz baz
+  checkrenamed /foo /bar
+  checkrenamed /foz /baz
 }
 
 @test "rename two files to two, each pair slightly different" {
@@ -163,8 +163,8 @@ do_an_update() {
   gendataA 20 bar
   gendataB 20 baz
   do_an_update
-  checkrenamed foo bar
-  checkrenamed foz baz
+  checkrenamed /foo /bar
+  checkrenamed /foz /baz
 }
 
 @test "rename two files to two, one very different" {
@@ -183,9 +183,9 @@ do_an_update() {
   gendataA 20 bar
   gendataCs 20 baz  
   do_an_update
-  run checkrenamed foo bar
+  run checkrenamed /foo /bar
   if [ $status -eq 1 ] ; then
-    checkrenamed foz bar
+    checkrenamed /foz /bar
   fi
 }
 
