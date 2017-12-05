@@ -1037,12 +1037,16 @@ void clean_renames(struct manifest *manifest)
 	list = g_list_first(manifest->files);
 	while (list) {
 		file = list->data;
-		/* if the file is marked as deleted and renamed it is a
-		 * renamed-from file. If the rename_peer field is still NULL
-		 * then it has been orphaned. Mark these as deleted */
-		if (file->is_deleted && file->is_rename && !file->rename_peer) {
-			hash_set_zeros(file->hash);
+		/* if a file is marked as a rename but has lost its rename_peer
+		 * it needs to be cleaned up */
+		if (file->is_rename && !file->rename_peer) {
+			/* no longer a rename */
 			file->is_rename = 0;
+			/* if the file is marked as deleted and renamed it is a
+			 * renamed-from file. Mark these as deleted now */
+			if (file->is_deleted) {
+				hash_set_zeros(file->hash);
+			}
 		}
 
 		list = g_list_next(list);
