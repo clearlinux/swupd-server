@@ -45,6 +45,7 @@ static void runtime_state_heuristics(struct file *file)
 	/* these are shipped directories that are not themselves state,
 	 * rather only their contents are state */
 	if ((strcmp(file->filename, "/usr/src/debug") == 0) ||
+	    (strcmp(file->filename, "/usr/src/kernel") == 0) ||
 	    (strcmp(file->filename, "/dev") == 0) ||
 	    (strcmp(file->filename, "/home") == 0) ||
 	    (strcmp(file->filename, "/proc") == 0) ||
@@ -53,6 +54,12 @@ static void runtime_state_heuristics(struct file *file)
 	    (strcmp(file->filename, "/sys") == 0) ||
 	    (strcmp(file->filename, "/tmp") == 0) ||
 	    (strcmp(file->filename, "/var") == 0)) {
+		return;
+	}
+
+	/* the contents of these directory are not state,
+	 * but it belongs to a state directory  */
+	if ((strncmp(file->filename, "/usr/src/kernel/", 16) == 0)) {
 		return;
 	}
 
@@ -72,7 +79,7 @@ static void runtime_state_heuristics(struct file *file)
 		return;
 	}
 
-	/* these are commonly added directories for user customizatio,
+	/* these are commonly added directories for user customization,
 	 * ideally this never triggers if our package builds are clean */
 	if ((strncmp(file->filename, "/acct", 5) == 0) ||
 	    (strncmp(file->filename, "/cache", 6) == 0) ||
