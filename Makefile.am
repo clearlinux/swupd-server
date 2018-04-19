@@ -16,6 +16,7 @@ swupd_create_update_SOURCES = \
 	src/chroot.c \
 	src/config.c \
 	src/create_update.c \
+	src/curl_helper.c \
 	src/delta.c \
 	src/fullfiles.c \
 	src/globals.c \
@@ -23,6 +24,7 @@ swupd_create_update_SOURCES = \
 	src/helpers.c \
 	src/heuristics.c \
 	src/log.c \
+	src/in_memory_archive.c \
 	src/manifest.c \
 	src/pack.c \
 	src/rename.c \
@@ -34,6 +36,7 @@ swupd_create_update_SOURCES = \
 swupd_make_pack_SOURCES = \
 	src/analyze_fs.c \
 	src/config.c \
+	src/curl_helper.c \
 	src/delta.c \
 	src/globals.c \
 	src/groups.c \
@@ -49,11 +52,13 @@ swupd_make_pack_SOURCES = \
 swupd_make_fullfiles_SOURCES = \
 	src/analyze_fs.c \
 	src/config.c \
+	src/curl_helper.c \
 	src/delta.c \
 	src/fullfiles.c \
 	src/globals.c \
 	src/groups.c \
 	src/helpers.c \
+	src/in_memory_archive.c \
 	src/log.c \
 	src/make_fullfiles.c \
 	src/manifest.c \
@@ -62,22 +67,29 @@ swupd_make_fullfiles_SOURCES = \
 	src/stats.c \
 	src/xattrs.c
 
-AM_CPPFLAGS = $(glib_CFLAGS) -I$(top_srcdir)/include
+AM_CPPFLAGS = $(glib_CFLAGS) $(libarchive_CFLAGS) $(libcurl_CFLAGS) -I$(top_srcdir)/include
 
 swupd_create_update_LDADD = \
 	$(glib_LIBS) \
+        $(libcurl_LIBS) \
+	$(libarchive_LIBS) \
 	$(zlib_LIBS) \
 	$(openssl_LIBS) \
+	$(libarchive_LIBS) \
 	$(bsdiff_LIBS)
 
 swupd_make_pack_LDADD = \
 	$(glib_LIBS) \
+        $(libcurl_LIBS) \
+	$(libarchive_LIBS) \
 	$(zlib_LIBS) \
 	$(openssl_LIBS) \
 	$(bsdiff_LIBS)
 
 swupd_make_fullfiles_LDADD = \
 	$(glib_LIBS) \
+        $(libcurl_LIBS) \
+	$(libarchive_LIBS) \
 	$(zlib_LIBS) \
 	$(openssl_LIBS) \
 	$(bsdiff_LIBS)

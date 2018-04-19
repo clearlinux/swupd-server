@@ -8,7 +8,7 @@ language: c
 # - bsdiff 1.* is the Clear Linux OS fork
 before_install:
         - sudo apt-get -qq update
-        - sudo apt-get install -y libmagic-dev
+        - sudo apt-get install -y libmagic-dev libcurl4-nss-dev libarchive-dev libattr1-dev
 
 install:
         - wget https://github.com/libcheck/check/releases/download/0.11.0/check-0.11.0.tar.gz

@@ -161,12 +161,14 @@ extern char *state_dir;
 extern char *packstage_dir;
 extern char *image_dir;
 extern char *staging_dir;
+extern char *content_url;
 
 extern bool init_globals(void);
 extern void free_globals(void);
 extern bool set_format(char *);
 extern void check_root(void);
 extern bool set_state_dir(char *);
+extern bool set_content_url(const char *);
 extern bool init_state_globals(void);
 extern void free_state_globals(void);
 
@@ -246,6 +248,7 @@ extern void consolidate_submanifests(struct manifest *manifest);
 extern void populate_file_struct(struct file *file, char *filename);
 extern void download_exta_base_content(void);
 
+struct timeval;
 extern char *get_elapsed_time(struct timeval *t1, struct timeval *t2);
 extern void init_log(const char *prefix, const char *bundle, int start, int end);
 extern void init_log_stdout(void);
@@ -259,7 +262,7 @@ extern void type_change_detection(struct manifest *manifest);
 extern void rename_detection(struct manifest *manifest);
 extern void link_renames(GList *newfiles, int to_version);
 extern void final_link(GList *files);
-extern void __create_delta(struct file *file, int from_version, char *from_hash);
+extern void __create_delta(struct file *file, int from_version, int to_version, char *from_hash);
 
 extern void account_delta_hit(void);
 extern void account_delta_miss(void);
@@ -268,17 +271,10 @@ extern FILE *fopen_exclusive(const char *filename); /* no mode, opens for write 
 extern void dump_file_info(struct file *file);
 extern void string_or_die(char **strp, const char *fmt, ...);
 extern void print_elapsed_time(const char *step, struct timeval *previous_time, struct timeval *current_time);
-extern int system_argv_pipe(char *const lhscmd[], char *const rhscmd[]);
-extern int system_argv_pipe_fd(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
-			       int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[]);
-extern void pipe_monitor(int lnewstdinfd, int lnewstderrfd, char *const lhscmd[],
-			 int rnewstdoutfd, int rnewstderrfd, char *const rhscmd[]);
 extern int system_argv(char *const argv[]);
-extern int system_argv_fd(int newstdinfd, int newstdoutfd, int newstderrfd, char *const cmd[]);
-extern pid_t system_argv_fd_nowait(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[]);
-extern void exec_cmd_fd(int newstdinfd, int newstdoutfd, int newstderrfd, int closefd, char *const cmd[]);
-extern void move_fd(int oldfd, int newfd);
-extern int wait_process_terminate(pid_t pid);
+extern int system_argv_fd(char *const argv[], int newstdin, int newstdout, int newstderr);
+extern int system_argv_pipe(char *const argvp1[], int stdinp1, int stderrp1,
+			    char *const argvp2[], int stdoutp2, int stderrp2);
 extern int num_threads(float scaling);
 extern bool file_is_debuginfo(const char *path);
 

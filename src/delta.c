@@ -30,14 +30,22 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <attr/xattr.h>
 #include <unistd.h>
 
 #include "swupd.h"
 #include "xattrs.h"
+#include "curl_helper.h"
 
-void __create_delta(struct file *file, int from_version, char *from_hash)
+void __create_delta(struct file *file, int from_version, int to_version, char *from_hash)
 {
-	char *original, *newfile, *outfile, *dotfile, *testnewfile, *conf;
+	char *original = NULL, *newfile = NULL, *outfile = NULL, *dotfile = NULL, *testnewfile = NULL, *conf = NULL;
+	char *tmpdir = NULL;
+	char *url = NULL;
+	char *cmd = NULL;
+	bool delete_original = false;
+	struct manifest *manifest = NULL;
+	GError *gerror = NULL;
 	int ret;
 
 	if (!file->is_file || !file->peer->is_file) {
@@ -53,9 +61,81 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 	}
 
 	conf = config_image_base();
-	string_or_die(&newfile, "%s/%i/full/%s", conf, file->last_change, file->filename);
+	string_or_die(&newfile, "%s/%i/full/%s", conf, to_version, file->filename);
 
 	string_or_die(&original, "%s/%i/full/%s", conf, from_version, file->peer->filename);
+
+	if (lgetxattr(newfile, "security.ima", NULL, 0) > 0) {
+		/* There is a non-empty security.ima xattr on the new file.
+		 * That xattr contains a hash of the file content. We know that
+		 * the file content has changed, so  the xattr will be different
+		 * from the one on the old file and we can bail out early without
+		 * even bothering with retrieving the original file. A better
+		 * solution for systems with IMA would be to support deltas even
+		 * when xattrs are different.
+		 */
+		goto out;
+	}
+
+	if (access(original, F_OK) &&
+	    content_url) {
+		/* File does not exist. Try to get it from the online update repo instead.
+		 * This fallback is meant to be used for CI builds which start with no local
+		 * state and only HTTP(S) access to the published www directory.
+		 * Not being able to retrieve the file is not an error and will merely
+		 * prevent computing the delta.
+		 */
+		string_or_die(&tmpdir, "%s/make-pack-tmpdir-XXXXXX", state_dir);
+		tmpdir = g_dir_make_tmp("make-pack-XXXXXX", &gerror);
+		if (!tmpdir) {
+			LOG(NULL, "Failed to create temporary directory for untarring original file", "%s",
+			    gerror->message);
+			assert(0);
+		}
+		/* Determine hash of original file in the corresponding Manifest. */
+		manifest = manifest_from_file(from_version, "full");
+		if (!manifest) {
+			LOG(NULL, "Failed to read full Manifest", "version %d, cannot retrieve original file",
+			    from_version);
+			goto out;
+		}
+		const char *last_hash = NULL;
+		GList *list = g_list_first(manifest->files);
+		while (list) {
+			struct file *original_file = list->data;
+			if (!strcmp(file->filename, original_file->filename)) {
+				last_hash = original_file->hash;
+				break;
+			}
+			list = g_list_next(list);
+		}
+		if (!last_hash) {
+			LOG(NULL, "Original file not found", "%s in full manifest for %d - inconsistent update data?!",
+			    file->filename, from_version);
+			goto out;
+		}
+
+		/* We use a temporary copy because we don't want to
+		 * tamper with the original "full" folder which
+		 * probably does not even exist. Using a temporary file
+		 * file implies re-downloading in the future, but that's
+		 * consistent with the intended usage in a CI environment
+		 * which always starts from scratch.
+		 */
+		free(original);
+		string_or_die(&original, "%s/%s", tmpdir, last_hash);
+		delete_original = true;
+
+		/*
+		 * Download and unpack.
+		 */
+		string_or_die(&url, "%s/%d/files/%s.tar", content_url, from_version, last_hash);
+		LOG(file, "Downloading original file", "%s to %s", url, original);
+		if (curl_helper_unpack_tar(url, tmpdir)) {
+			LOG(file, "Downloading/unpacking failed, skipping delta", "%s", url);
+			goto out;
+		}
+	}
 
 	free(conf);
 
@@ -136,6 +216,18 @@ void __create_delta(struct file *file, int from_version, char *from_hash)
 		LOG(NULL, "Failed to rename", "");
 	}
 out:
+	if (delete_original) {
+		unlink(original);
+	}
+	if (tmpdir) {
+		rmdir(tmpdir);
+		g_free(tmpdir);
+	}
+	if (manifest) {
+		free_manifest(manifest);
+	}
+	g_clear_error(&gerror);
+	free(cmd);
 	free(testnewfile);
 	free(conf);
 	free(newfile);
