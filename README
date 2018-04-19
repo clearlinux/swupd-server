@@ -1,3 +1,12 @@
+With the release of mixer-tools v4.3.0 [1] the swupd-server project is
+deprecated.  All functionality has been re-written into the mixer tool under
+the `mixer build update` command. All development done around creating update
+content consumed by swupd-client is now done in that project.
+
+[1] https://github.com/clearlinux/mixer-tools
+
+---
+
 The swupd-server package provides a reference implementation of a software
 update server-side component that generates update content consumable by a
 software update client (swupd-client). Such content includes manifests that
